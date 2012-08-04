@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C494EFB515CD5DBA00762893 /* virus_helpers.c in Sources */ = {isa = PBXBuildFile; fileRef = C494EFB415CD5DBA00762893 /* virus_helpers.c */; };
 		C4F01DE415CCE4DE00CECD5A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4F01DE315CCE4DE00CECD5A /* Foundation.framework */; };
 		C4F01DE715CCE4DE00CECD5A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C4F01DE615CCE4DE00CECD5A /* main.m */; };
 		C4F01DEB15CCE4DE00CECD5A /* SCNSim.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C4F01DEA15CCE4DE00CECD5A /* SCNSim.1 */; };
@@ -30,6 +31,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C494EFB215CD5D2100762893 /* virus_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = virus_helpers.h; sourceTree = "<group>"; };
+		C494EFB415CD5DBA00762893 /* virus_helpers.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = virus_helpers.c; sourceTree = "<group>"; };
 		C4F01DDF15CCE4DE00CECD5A /* SCNSim */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SCNSim; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4F01DE315CCE4DE00CECD5A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C4F01DE615CCE4DE00CECD5A /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -85,6 +88,8 @@
 		C4F01DE515CCE4DE00CECD5A /* SCNSim */ = {
 			isa = PBXGroup;
 			children = (
+				C494EFB415CD5DBA00762893 /* virus_helpers.c */,
+				C494EFB215CD5D2100762893 /* virus_helpers.h */,
 				C4F01DF515CCE51100CECD5A /* Environment.h */,
 				C4F01DF615CCE51100CECD5A /* Environment.m */,
 				C4F01DF715CCE51100CECD5A /* helpers.c */,
@@ -164,6 +169,7 @@
 				C4F01DFE15CCE51100CECD5A /* helpers.c in Sources */,
 				C4F01DFF15CCE51100CECD5A /* Nematode.m in Sources */,
 				C4F01E0015CCE51100CECD5A /* Virus.m in Sources */,
+				C494EFB515CD5DBA00762893 /* virus_helpers.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
