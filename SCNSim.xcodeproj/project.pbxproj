@@ -10,6 +10,10 @@
 		C4F01DE415CCE4DE00CECD5A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4F01DE315CCE4DE00CECD5A /* Foundation.framework */; };
 		C4F01DE715CCE4DE00CECD5A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C4F01DE615CCE4DE00CECD5A /* main.m */; };
 		C4F01DEB15CCE4DE00CECD5A /* SCNSim.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C4F01DEA15CCE4DE00CECD5A /* SCNSim.1 */; };
+		C4F01DFD15CCE51100CECD5A /* Environment.m in Sources */ = {isa = PBXBuildFile; fileRef = C4F01DF615CCE51100CECD5A /* Environment.m */; };
+		C4F01DFE15CCE51100CECD5A /* helpers.c in Sources */ = {isa = PBXBuildFile; fileRef = C4F01DF715CCE51100CECD5A /* helpers.c */; };
+		C4F01DFF15CCE51100CECD5A /* Nematode.m in Sources */ = {isa = PBXBuildFile; fileRef = C4F01DFA15CCE51100CECD5A /* Nematode.m */; };
+		C4F01E0015CCE51100CECD5A /* Virus.m in Sources */ = {isa = PBXBuildFile; fileRef = C4F01DFC15CCE51100CECD5A /* Virus.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +35,14 @@
 		C4F01DE615CCE4DE00CECD5A /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C4F01DE915CCE4DE00CECD5A /* SCNSim-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SCNSim-Prefix.pch"; sourceTree = "<group>"; };
 		C4F01DEA15CCE4DE00CECD5A /* SCNSim.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = SCNSim.1; sourceTree = "<group>"; };
+		C4F01DF515CCE51100CECD5A /* Environment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Environment.h; sourceTree = "<group>"; };
+		C4F01DF615CCE51100CECD5A /* Environment.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Environment.m; sourceTree = "<group>"; };
+		C4F01DF715CCE51100CECD5A /* helpers.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = helpers.c; sourceTree = "<group>"; };
+		C4F01DF815CCE51100CECD5A /* helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = helpers.h; sourceTree = "<group>"; };
+		C4F01DF915CCE51100CECD5A /* Nematode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Nematode.h; sourceTree = "<group>"; };
+		C4F01DFA15CCE51100CECD5A /* Nematode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Nematode.m; sourceTree = "<group>"; };
+		C4F01DFB15CCE51100CECD5A /* Virus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Virus.h; sourceTree = "<group>"; };
+		C4F01DFC15CCE51100CECD5A /* Virus.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Virus.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +85,14 @@
 		C4F01DE515CCE4DE00CECD5A /* SCNSim */ = {
 			isa = PBXGroup;
 			children = (
+				C4F01DF515CCE51100CECD5A /* Environment.h */,
+				C4F01DF615CCE51100CECD5A /* Environment.m */,
+				C4F01DF715CCE51100CECD5A /* helpers.c */,
+				C4F01DF815CCE51100CECD5A /* helpers.h */,
+				C4F01DF915CCE51100CECD5A /* Nematode.h */,
+				C4F01DFA15CCE51100CECD5A /* Nematode.m */,
+				C4F01DFB15CCE51100CECD5A /* Virus.h */,
+				C4F01DFC15CCE51100CECD5A /* Virus.m */,
 				C4F01DE615CCE4DE00CECD5A /* main.m */,
 				C4F01DEA15CCE4DE00CECD5A /* SCNSim.1 */,
 				C4F01DE815CCE4DE00CECD5A /* Supporting Files */,
@@ -140,6 +160,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				C4F01DE715CCE4DE00CECD5A /* main.m in Sources */,
+				C4F01DFD15CCE51100CECD5A /* Environment.m in Sources */,
+				C4F01DFE15CCE51100CECD5A /* helpers.c in Sources */,
+				C4F01DFF15CCE51100CECD5A /* Nematode.m in Sources */,
+				C4F01E0015CCE51100CECD5A /* Virus.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +256,7 @@
 				C4F01DF015CCE4DE00CECD5A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
