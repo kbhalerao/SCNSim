@@ -21,7 +21,7 @@
     int Germinated; // 0 if false, 1 if true
 }
 -(Soybean*) init;
--(void) growIncrement: (float) increment temp: (float) temperature;
+-(void) growIncrement: (int) increment temp: (float) temperature;
 -(float) getFoodwithFeedRate: (float) feedrate;
 -(float) getHospitability;
 -(int) Age;

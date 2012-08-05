@@ -17,7 +17,9 @@
     int simTicks;
     int maxTicks;
     NSFileHandle *logfile;
-    
+    NSMutableDictionary *report_dict;
+    NSArray *columns;
+    int reportInterval;
 }
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
 -(void) installNewNematodes: (NSArray*) new_ematodes;

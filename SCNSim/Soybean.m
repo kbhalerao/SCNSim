@@ -18,7 +18,7 @@
     }
     return self;
 }
--(void) growIncrement: (float) increment temp: (float) temperature {
+-(void) growIncrement: (int) increment temp: (float) temperature {
     Age += increment;
     Age = Age % 365;
     if (Germinated == 0 && Age <= GERMINATEDATE) {
