@@ -51,6 +51,9 @@ int nematode_state_table[10][2]  =
     return self;
 }
 
+-(int) State {
+    return State;
+}
 -(float) Health {
     return Health;
 }
@@ -114,7 +117,12 @@ int nematode_state_table[10][2]  =
     }
 }
 
--(void) hatchTemp: (float) temperature Soy: (Soybean*) soy {
+//-(void) hatchTemp: (float) temperature Soy: (Soybean*) soy {
+-(void) hatch {
+    
+    int temperature = [[Sim environment] temperature];
+    Soybean* soy = [Sim soybean];
+    
     if (Health >0) {
         float prob_hatch = 0;
         // assuming embryo sufficiently developed to hatch
@@ -131,14 +139,14 @@ int nematode_state_table[10][2]  =
     else State = DEAD;
 }
 
--(void) burrowIntoSoybean: (Soybean*) soy {
+-(void) burrow {
     // J2 successfully burrows into soybean plant and becomes J3
-    if (coin_toss([soy getHospitability])) {
+    if (coin_toss([[Sim soybean] getHospitability])) {
         State = J3;
     }
 }
 
--(void) feedOnSoy: (Soybean*) soy {
+-(void) feed {
     float feedrate = 0;
     switch (State) {
         case J3: feedrate = J3_FEED; break;
@@ -149,7 +157,7 @@ int nematode_state_table[10][2]  =
         default: feedrate = 0; break;
     }
     
-    float food = [soy getFoodwithFeedRate:feedrate];
+    float food = [[Sim soybean] getFoodwithFeedRate:feedrate];
     float health_gain = food / feedrate*100;
     Health = MIN(Health+health_gain, 100);
 }
@@ -191,11 +199,11 @@ int nematode_state_table[10][2]  =
         }
     }
     [fem setViruses:transmitted];
-    [fem setState: F_PRIME];
+    [fem setState: MATING];
 }
 
--(void) incubateAtTemp: (int) temp {
-    if (temp > INCUBATE_TEMP) {
+-(void) incubate {
+    if ([[Sim environment] temperature] > INCUBATE_TEMP) {
         int num_incubate = MIN((int)random_gauss(NumEggs/4, NumEggs/10), NumEggs);
         NumEggs -= num_incubate;
         
@@ -226,7 +234,7 @@ int nematode_state_table[10][2]  =
 
 -(void) moveSingleVirusToHost: (Nematode*) nem {
     Virus *random_virus = [Viruses objectAtIndex:
-                           random_integer(0,(int)[Viruses count])];
+                           random_integer(0,(int)([Viruses count]-1))];
     if (coin_toss(random_virus.Transmissibility)) {
         [nem setViruses:[[NSArray alloc]
                           initWithObjects:random_virus, nil]];
@@ -238,16 +246,52 @@ int nematode_state_table[10][2]  =
     State = state;
 }
 
--(void) grow {
-    
+-(void) produceEggs {
+    if (!coin_toss(Health/100)) {
+        State = EGGSAC;
+    }
 }
+
+-(void) growBy: (int) increment {
+    [self incrementAge: increment];
+    [self decrement_health];
+    switch (State) {
+        case EMBRYO: [self develop]; 
+            break;
+        case J1: [self hatch];
+            break;
+        case J2: [self burrow];
+            break;
+        case J3: [self feed];
+            [self differentiate];
+            break;
+        case J4M:[self feed];
+            [self mature];
+            break;
+        case M: ; [self findMate];
+            break;
+        case F: [self feed];
+            break;
+        case F_PRIME: [self feed];
+            [self produceEggs];
+        case EGGSAC:
+            [self incubate];
+            break;
+        case MATING: [self feed];
+            State = F_PRIME;
+            break;
+    }
+}
+
+
 -(void) setNumEggs: (int) numeggs {
     NumEggs = numeggs;
 }
+
 -(void) setViruses: (NSArray*) viruses {
     [Viruses addObjectsFromArray: viruses];
 }
-// Private methods
+
 -(void) decrement_health {
     int min_time = nematode_state_table[State][0];
     int max_time = nematode_state_table[State][1];
@@ -261,6 +305,30 @@ int nematode_state_table[10][2]  =
     }
 }
 
-
+-(void) findMate {
+    
+    if (coin_toss(Health/100)) {
+        int male_count = 0;
+        for (int i=0; i<[[Sim nematodes] count]; i++) {
+            if ([[[Sim nematodes] objectAtIndex:i] State] == M) male_count++;
+        }
+        if (male_count >10) {
+            NSMutableArray *potential_mates = [[NSMutableArray alloc] init];
+            for (int i=0; i<[[Sim nematodes] count]; i++) {
+                Nematode *nem = [[Sim nematodes] objectAtIndex:i];
+                if ([nem State] == F || [nem State] == F_PRIME) {
+                    [potential_mates addObject: nem];
+                }
+            }
+            if ([potential_mates count] > 10) {
+                Nematode *mate = [potential_mates objectAtIndex:
+                                  random_integer(0, (int)[potential_mates count]-1)];
+                [self impregnateFemale:mate];
+                if (!coin_toss(Health)) State = DEAD;
+                
+            }
+        }
+    }
+}
 
 @end

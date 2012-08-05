@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "Virus.h"
 #import "Simulation.h"
+#import "Soybean.h"
 
 // State Definitions
 #define EMBRYO 0
@@ -22,6 +23,7 @@
 #define F_PRIME 8
 #define EGGSAC 9
 #define DEAD 10
+#define MATING 11
 
 // Life cycle times
 #define HATCH_MIN_TEMP 61
@@ -48,10 +50,11 @@
 -(Nematode*) initWithState: (int) state inSim: (Simulation*) sim;
 -(void) incrementAge: (int) increment;
 -(void) reproduceViruses;
--(void) grow;
+-(void) growBy: (int) increment;
 -(void) setNumEggs: (int) numeggs;
 -(void) setViruses: (NSArray*) viruses;
 -(float) Health;
 -(int) NumEggs;
 -(void) setState: (int) state;
+-(int) State;
 @end

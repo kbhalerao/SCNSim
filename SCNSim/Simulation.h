@@ -7,10 +7,29 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "Soybean.h"
+#import "Environment.h"
 
 @interface Simulation : NSObject {
-    NSMutableArray *Nematodes;
+    NSMutableArray *nematodes;
+    Soybean *soybean;
+    Environment *environment;
+    int simTicks;
+    int maxTicks;
+    NSFileHandle *logfile;
+    
 }
--(void) installNewNematodes: (NSArray*) nematodes;
+-(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
+-(void) installNewNematodes: (NSArray*) new_ematodes;
+-(Soybean*) soybean;
+-(Environment*) environment;
+-(NSMutableArray*) nematodes;
+-(void) setLogFile: (NSString*) logfilename;
+-(void) infectCystsAtRate: (float) infectionRate
+                  atLoads: (int) viralLoads
+            withVirluence: (float) Virulence
+     withTransmissibility: (float) Transmissibility
+            withBurstSize: (int) BurstSize;
+-(void) run;
 
 @end
