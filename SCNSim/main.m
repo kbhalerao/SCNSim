@@ -12,9 +12,9 @@
 
 int main(int argc, const char * argv[])
 {
-    Simulation *mysim = [[Simulation alloc] initForMaxTicks:24*365 withCysts:1];
+    Simulation *mysim = [[Simulation alloc] initForMaxTicks:24*365 withCysts:5];
     [mysim infectCystsAtRate:1 atLoads:10 withVirluence:0.1 withTransmissibility:0.8 withBurstSize:8];
-    [mysim setLogFile:@"./log.csv"];
+    [mysim setLogFile:@"/Users/kbhalerao/Documents/UIUC/Papers/Journals/SCNModel/log.txt"];
     [mysim run];
     
     return 0;

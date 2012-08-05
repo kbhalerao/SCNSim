@@ -25,8 +25,8 @@ int coin_toss(float probability) {
     // compares the number against probability;
     // return True if lesser, False if greater
     float val = random_float();
-    if (val < probability) return 0;
-    else return 1;
+    if (val < probability) return 1;
+    else return 0;
 }
 
 

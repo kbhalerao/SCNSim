@@ -77,7 +77,8 @@ int nematode_state_table[10][2]  =
     [self cure_viruses];
     // first get rid of dead viruses
     float burden = 0;
-    if ([Viruses count] < 30 && (State != EGGSAC || State != DEAD)) {
+    if ([Viruses count] < 30 && [Viruses count] > 0 && \
+                State != EGGSAC && State != DEAD) {
         // only run if there aren't enough viruses already
         
         
@@ -100,10 +101,11 @@ int nematode_state_table[10][2]  =
         }
         
         [Viruses addObjectsFromArray:newviruses];
+        for (int i=0; i<[Viruses count]; i++) {
+            burden += [[Viruses objectAtIndex:i] Virulence];
+        }
     }
-    for (int i=0; i<[Viruses count]; i++) {
-        burden += [[Viruses objectAtIndex:i] Virulence];
-    }
+    
     if (burden > Health) {
         State = DEAD;
     }
@@ -295,7 +297,7 @@ int nematode_state_table[10][2]  =
 -(void) decrement_health {
     int min_time = nematode_state_table[State][0];
     int max_time = nematode_state_table[State][1];
-    float health_per_day = 100/(max_time-min_time+1); //TODO
+    float health_per_day = 100.0/(max_time-min_time+1); //TODO
     
     if (Age >= min_time) {
         Health = MAX(Health - health_per_day, 0);

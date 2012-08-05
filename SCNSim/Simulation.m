@@ -32,6 +32,7 @@
 -(void) populateCysts: (int) cysts {
     for(int i=0; i<cysts; i++) {
         Nematode *cyst = [[Nematode alloc] initWithState:EGGSAC inSim:self];
+        [cyst setNumEggs:random_integer(300,500)];
         [nematodes addObject:cyst];
     }
 }
@@ -70,20 +71,22 @@
                 [virus mutate:1];
                 [viruslist addObject:virus];
             }
+            [[nematodes objectAtIndex:i] setViruses:viruslist];
         }
     }
     NSLog(@"Infected eggs with viruses\n");
 }
 
 -(void) removeDeadNematodes {
-    NSLog(@"Total Nematode Count %lu\n", [nematodes count]);
+    //NSLog(@"Total Nematode Count %lu\n", [nematodes count]);
     NSPredicate *notdead = [NSPredicate predicateWithFormat:@"State != %i", @DEAD];
-    NSPredicate *dead = [NSPredicate predicateWithFormat:@"State == %i", @DEAD];
-    NSMutableArray *livenematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:notdead];
-    NSMutableArray *deadnematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:dead];
-    NSLog(@"Live :%lu  ", [livenematodes count]);
-    NSLog(@"Dead: %lu\n", [deadnematodes count]);
+    //NSPredicate *dead = [NSPredicate predicateWithFormat:@"State == %i", @DEAD];
+    //NSMutableArray *livenematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:notdead];
+    //NSMutableArray *deadnematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:dead];
+    //NSLog(@"Live :%lu  ", [livenematodes count]);
+    //NSLog(@"Dead: %lu\n", [deadnematodes count]);
     
+    nematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:notdead];
 }
 
 -(void) logMessage: (NSString*) logstring {
@@ -97,6 +100,7 @@
         if (simTicks % 24==0) {
             [environment increment_age:24];
             [soybean growIncrement:1 temp:[environment temperature]];
+            [self removeDeadNematodes];
             for (int i=0; i<[nematodes count]; i++) [[nematodes objectAtIndex:i] growBy: 1];
         }
         simTicks ++;
@@ -119,13 +123,13 @@
 }
 
 -(NSArray*) partitionArrayforState: (int) state {
-    NSPredicate *fraction = [NSPredicate predicateWithFormat:@"State != %i", state];
+    NSPredicate *fraction = [NSPredicate predicateWithFormat:@"State == %i", state];
     return [nematodes filteredArrayUsingPredicate:fraction];
 }
 
 -(void) report {
     
-    [report_dict setObject:[NSNumber numberWithInt:simTicks] forKey:@"Ticks"];
+    [report_dict setObject:[NSNumber numberWithInt:simTicks] forKey:@"Tick"];
     [report_dict setObject: [NSNumber numberWithInt:[environment temperature]] forKey: @"Temperature"];
     [report_dict setObject: [NSNumber numberWithFloat:[soybean PlantSize]] forKey: @"Soybean"];
     [report_dict setObject: [NSNumber numberWithUnsignedLong:[nematodes count]] forKey: @"Nematodes"];
