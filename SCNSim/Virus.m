@@ -38,4 +38,15 @@
     -(void) setVirulence: (float) newvirulence {
         Virulence = newvirulence;
     }
+
+    -(void) mutate:(float)probability {
+        if(coin_toss(probability)) {
+            Transmissibility += random_gauss(0, 0.05);
+            Virulence += random_gauss(0, 0.05);
+            BurstSize += random_integer(-3, 3);
+        }
+        if (Transmissibility > 1) Transmissibility = 1;
+        if (Virulence > 1) Virulence = 1;
+    }
+
 @end

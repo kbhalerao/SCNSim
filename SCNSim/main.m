@@ -10,6 +10,7 @@
 #import <stdio.h>
 #import "helpers.h"
 #import "Environment.h"
+#import "Virus.h"
 
 int main(int argc, const char * argv[])
 {
@@ -22,6 +23,8 @@ int main(int argc, const char * argv[])
     }
     // insert code here...
     
+    
+    /*
     Environment *env = [[Environment alloc] init];
     
     
@@ -34,6 +37,22 @@ int main(int argc, const char * argv[])
     }
     
     //[env release];
+    */
     
+    // let's try to create an array of objects:
+    
+    NSMutableArray *viruslist = [[NSMutableArray alloc] init];
+    
+    for (int i=0; i<100; i++) {
+        Virus *virus = [[Virus alloc] initWithVirulence:0.1 Transmissibility:0.2 BurstSize:4];
+        [virus mutate: 0.5];
+        [viruslist addObject:virus];
+    }
+    
+    for (int i=0; i<[viruslist count]; i++) {
+        Virus *virus = viruslist[i];
+        printf("%i, %i, %f, %f\n", i, virus.BurstSize, virus.Transmissibility, virus.Virulence);
+    }
+
     return 0;
 }

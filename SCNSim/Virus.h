@@ -21,4 +21,6 @@
 -(void) setBurstSize: (int) newburst;
 -(void) setTransmissibility: (float) newtransmissibility;
 -(void) setVirulence: (float) newvirulence;
+
+-(void) mutate: (float) probability;
 @end
