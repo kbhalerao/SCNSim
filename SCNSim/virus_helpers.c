@@ -7,14 +7,3 @@
 //
 
 #include <stdio.h>
-#import "Virus.h"
-
-
-void mutate(Virus* virus, float probability) {
-    if(coin_toss(probability)) {
-        virus.Transmissibility += random_gauss(0, 0.05);
-        virus.Virulence += random_gauss(0, 0.05);
-        virus.BurstSize += random_integer(-3, 3);
-    }
-    
-}
