@@ -177,7 +177,7 @@ int nematode_state_table[10][2]  =
     // J4M -> M or J4F -> F
     int nextState;
     if (State == J4M) nextState = M;
-    if (State == J4F) nextState = F;
+    else nextState = F; //(State == J4F) 
     
     int min_age = nematode_state_table[State][0];
     int max_age = nematode_state_table[State][1];
@@ -206,7 +206,7 @@ int nematode_state_table[10][2]  =
 
 -(void) incubate {
     if ([[Sim environment] temperature] > INCUBATE_TEMP) {
-        int num_incubate = MIN((int)random_gauss(NumEggs/4, NumEggs/10), NumEggs);
+        int num_incubate = MIN((int)random_gauss(NumEggs/10.0, NumEggs/10.0), NumEggs);
         NumEggs -= num_incubate;
         
         if(NumEggs == 0 || Health <= 0) State = DEAD;
@@ -251,6 +251,7 @@ int nematode_state_table[10][2]  =
 -(void) produceEggs {
     if (!coin_toss(Health/100)) {
         State = EGGSAC;
+        NumEggs = random_integer(300,500);
     }
 }
 
@@ -268,6 +269,9 @@ int nematode_state_table[10][2]  =
             [self differentiate];
             break;
         case J4M:[self feed];
+            [self mature];
+            break;
+        case J4F: [self feed];
             [self mature];
             break;
         case M: ; [self findMate];
@@ -297,7 +301,7 @@ int nematode_state_table[10][2]  =
 -(void) decrement_health {
     int min_time = nematode_state_table[State][0];
     int max_time = nematode_state_table[State][1];
-    float health_per_day = 100.0/(max_time-min_time+1); //TODO
+    float health_per_day = 50.0/(max_time-min_time); //TODO
     
     if (Age >= min_time) {
         Health = MAX(Health - health_per_day, 0);

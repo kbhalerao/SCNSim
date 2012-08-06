@@ -23,7 +23,7 @@
         nematodes = [[NSMutableArray alloc] init];
         report_dict = [[NSMutableDictionary alloc] initWithCapacity:30]; //hopefully enough...
         reportInterval = 24;
-        
+        Done = FALSE;
         [self populateCysts: cysts];
     }
     return self;
@@ -37,8 +37,8 @@
     }
 }
 
--(void) installNewNematodes: (NSArray*) new_nematodes {
-    [nematodes addObjectsFromArray:nematodes];
+-(void) installNewNematodes: (NSMutableArray*) new_nematodes {
+    [nematodes addObjectsFromArray:new_nematodes];
 }
 -(Soybean*) soybean {
     return soybean;
@@ -79,14 +79,16 @@
 
 -(void) removeDeadNematodes {
     //NSLog(@"Total Nematode Count %lu\n", [nematodes count]);
-    NSPredicate *notdead = [NSPredicate predicateWithFormat:@"State != %i", @DEAD];
+    NSPredicate *notdead = [NSPredicate predicateWithFormat:@"State != 10"]; // dead
     //NSPredicate *dead = [NSPredicate predicateWithFormat:@"State == %i", @DEAD];
     //NSMutableArray *livenematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:notdead];
     //NSMutableArray *deadnematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:dead];
     //NSLog(@"Live :%lu  ", [livenematodes count]);
     //NSLog(@"Dead: %lu\n", [deadnematodes count]);
     
-    nematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:notdead];
+    NSArray* temp = [nematodes filteredArrayUsingPredicate:notdead];
+    [nematodes removeAllObjects];
+    [nematodes addObjectsFromArray:temp];
 }
 
 -(void) logMessage: (NSString*) logstring {
@@ -94,7 +96,7 @@
 }
 
 -(void) run {
-    while (simTicks < maxTicks) {
+    while (simTicks < maxTicks && !Done) {
         for (int i=0; i<[nematodes count]; i++) [[nematodes objectAtIndex:i] reproduceViruses];
         if (simTicks % reportInterval==0) [self report];
         if (simTicks % 24==0) {
@@ -106,10 +108,15 @@
         simTicks ++;
         //NSLog(@"%d", simTicks);
     }
-    [logfile closeFile];
+    [self cleanup];
 }
 
--(NSArray*) getArrayWithProperty: (NSString*) property ForArray: (NSMutableArray*) array {
+-(void) cleanup {
+    [logfile closeFile];
+    Done = TRUE;
+}
+
+-(NSArray*) getArrayWithProperty: (NSString*) property ForArray: (NSArray*) array {
     NSMutableArray *prop_array = [[NSMutableArray alloc] init];
     for (int i=0; i<[array count]; i++) {
         id value = [[array objectAtIndex:i] valueForKey: property];
@@ -118,7 +125,7 @@
     return prop_array;
 }
 
--(NSArray*) getStatsForProperty: (NSString*) property ForArray: (NSMutableArray*) array {
+-(NSArray*) getStatsForProperty: (NSString*) property ForArray: (NSArray*) array {
     return [self meanAndStandardDeviationOf:[self getArrayWithProperty:property ForArray:array]];
 }
 
@@ -137,6 +144,9 @@
     NSArray *stats_health = [self getStatsForProperty:@"Health" ForArray:nematodes];
     [report_dict setObject: stats_health[0] forKey: @"Health mean"];
     [report_dict setObject: stats_health[1] forKey: @"Health stdev"];
+    if ([stats_health[0] floatValue] > 100) {
+        printf ("Ping!\n");
+    }
     
     NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
     NSArray *vir_arrays = [self getArrayWithProperty:@"Viruses" ForArray:nematodes];
@@ -144,7 +154,7 @@
         [vir_acc addObjectsFromArray:[vir_arrays objectAtIndex: i]];
     }
     
-    [report_dict setObject: [NSNumber numberWithFloat:[vir_acc count]/[nematodes count]] forKey: @"Virus Load"];
+    [report_dict setObject: [NSNumber numberWithFloat:[vir_acc count]/(float)[nematodes count]] forKey: @"Virus Load"];
     
     NSArray *trans_stats = [self getStatsForProperty:@"Transmissibility" ForArray:vir_acc];
     [report_dict setObject: trans_stats[0] forKey: @"Transmissibility mean"];
@@ -162,8 +172,15 @@
                            @"J4M", @"J4F", @"M", @"F", @"F_Prime", @"EggSac", @"Dead", @"Mating", nil];
     
     for (int i=0; i<[stateNames count]; i++) {
-        NSNumber *statecount = [NSNumber numberWithUnsignedLong:[[self partitionArrayforState:i] count]];
+        NSArray *partition = [self partitionArrayforState:i];
+        NSNumber *statecount = [NSNumber numberWithUnsignedLong:[partition count]];
         [report_dict setObject:statecount forKey:[stateNames objectAtIndex:i]];
+        if (i==EGGSAC) {
+            NSArray *eggs_stats = [self getStatsForProperty:@"NumEggs" ForArray:partition];
+            [report_dict setObject: eggs_stats[0] forKey: @"Eggs per sac mean"];
+            [report_dict setObject: eggs_stats[1] forKey: @"Eggs per sac stdev"];
+        }
+        
     }
     
     if (simTicks==0) {
@@ -179,6 +196,9 @@
     NSString *report_line = [NSString stringWithFormat:@"%@\n", [report_values componentsJoinedByString:@","]];
     [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
     
+    if ([[report_dict valueForKey:@"Virus Load"] floatValue] <= 0.0) [self cleanup];
+    if ([nematodes count] == 0) [self cleanup];
+    // eject if the viruses or nematodes are all dead
     
 }
 

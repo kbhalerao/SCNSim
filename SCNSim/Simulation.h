@@ -20,9 +20,10 @@
     NSMutableDictionary *report_dict;
     NSArray *columns;
     int reportInterval;
+    int Done;
 }
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
--(void) installNewNematodes: (NSArray*) new_ematodes;
+-(void) installNewNematodes: (NSMutableArray*) new_nematodes;
 -(Soybean*) soybean;
 -(Environment*) environment;
 -(NSMutableArray*) nematodes;
