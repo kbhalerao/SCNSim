@@ -33,6 +33,6 @@
             withVirluence: (float) Virulence
      withTransmissibility: (float) Transmissibility
             withBurstSize: (int) BurstSize;
--(void) run;
+-(int) run;
 
 @end

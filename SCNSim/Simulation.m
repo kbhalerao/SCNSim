@@ -95,7 +95,7 @@
     NSLog(@"%d: %@\n", simTicks, logstring);
 }
 
--(void) run {
+-(int) run {
     while (simTicks < maxTicks && !Done) {
         for (int i=0; i<[nematodes count]; i++) [nematodes[i] reproduceViruses];
         if (simTicks % reportInterval==0) [self report];
@@ -109,6 +109,7 @@
         //NSLog(@"%d", simTicks);
     }
     [self cleanup];
+    return simTicks;
 }
 
 -(void) cleanup {
