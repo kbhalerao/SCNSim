@@ -67,7 +67,7 @@ int nematode_state_table[10][2]  =
 }
 -(void) cure_viruses { // private method
     for (int i=0; i<[Viruses count]; i++) {
-        Virus *vir = (Virus*) [Viruses objectAtIndex:i];
+        Virus *vir = (Virus*) Viruses[i];
         if (vir.Virulence <= 0 || vir.Transmissibility <= 0 || vir.BurstSize <= 0) {
             [Viruses removeObject:vir];
         }
@@ -91,7 +91,7 @@ int nematode_state_table[10][2]  =
             if (coin_toss(Health / 100)) {
                 // reproduce only if healthy enough
                 
-                Virus *vir = [Viruses objectAtIndex:i];
+                Virus *vir = Viruses[i];
                 for (int j=0; j<vir.BurstSize; j++) {
                     Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
                     [newvir mutate:0.4];
@@ -102,7 +102,7 @@ int nematode_state_table[10][2]  =
         
         [Viruses addObjectsFromArray:newviruses];
         for (int i=0; i<[Viruses count]; i++) {
-            burden += [[Viruses objectAtIndex:i] Virulence];
+            burden += [Viruses[i] Virulence];
         }
     }
     
@@ -194,7 +194,7 @@ int nematode_state_table[10][2]  =
     }
     NSMutableArray *transmitted = [[NSMutableArray alloc] init];
     for (int i=0; i<[Viruses count]; i++) {
-        Virus *vir = [Viruses objectAtIndex:i];
+        Virus *vir = Viruses[i];
         if (coin_toss(vir.Transmissibility)) {
             [transmitted addObject:vir];
             [Viruses removeObject:vir];
@@ -235,11 +235,9 @@ int nematode_state_table[10][2]  =
 }
 
 -(void) moveSingleVirusToHost: (Nematode*) nem {
-    Virus *random_virus = [Viruses objectAtIndex:
-                           random_integer(0,(int)([Viruses count]-1))];
+    Virus *random_virus = Viruses[random_integer(0,(int)([Viruses count]-1))];
     if (coin_toss(random_virus.Transmissibility)) {
-        [nem setViruses:[[NSArray alloc]
-                          initWithObjects:random_virus, nil]];
+        [nem setViruses:@[random_virus]];
         [Viruses removeObject:random_virus];
     }
 }
@@ -316,19 +314,18 @@ int nematode_state_table[10][2]  =
     if (coin_toss(Health/100)) {
         int male_count = 0;
         for (int i=0; i<[[Sim nematodes] count]; i++) {
-            if ([[[Sim nematodes] objectAtIndex:i] State] == M) male_count++;
+            if ([[Sim nematodes][i] State] == M) male_count++;
         }
         if (male_count >10) {
             NSMutableArray *potential_mates = [[NSMutableArray alloc] init];
             for (int i=0; i<[[Sim nematodes] count]; i++) {
-                Nematode *nem = [[Sim nematodes] objectAtIndex:i];
+                Nematode *nem = [Sim nematodes][i];
                 if ([nem State] == F || [nem State] == F_PRIME) {
                     [potential_mates addObject: nem];
                 }
             }
             if ([potential_mates count] > 10) {
-                Nematode *mate = [potential_mates objectAtIndex:
-                                  random_integer(0, (int)[potential_mates count]-1)];
+                Nematode *mate = potential_mates[random_integer(0, (int)[potential_mates count]-1)];
                 [self impregnateFemale:mate];
                 if (!coin_toss(Health)) State = DEAD;
                 

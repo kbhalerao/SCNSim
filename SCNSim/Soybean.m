@@ -22,12 +22,12 @@
     Age += increment;
     Age = Age % 365;
     if (Germinated == 0 && Age <= GERMINATEDATE) {
-        [SoilTemp addObject:[NSNumber numberWithFloat:temperature]];
+        [SoilTemp addObject:@(temperature)];
         if ([SoilTemp count] > 3) {
             [SoilTemp removeObjectAtIndex:0];
             float avgTemp = 0;
             for (int i=0; i<[SoilTemp count];  i++) {
-                avgTemp += [(NSNumber*)[SoilTemp objectAtIndex:i] floatValue];
+                avgTemp += [(NSNumber*)SoilTemp[i] floatValue];
                 //seriously dude? all this to add a float?
             }
             avgTemp = avgTemp / [SoilTemp count];

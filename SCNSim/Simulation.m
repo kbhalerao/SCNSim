@@ -71,7 +71,7 @@
                 [virus mutate:1];
                 [viruslist addObject:virus];
             }
-            [[nematodes objectAtIndex:i] setViruses:viruslist];
+            [nematodes[i] setViruses:viruslist];
         }
     }
     NSLog(@"Infected eggs with viruses\n");
@@ -97,13 +97,13 @@
 
 -(void) run {
     while (simTicks < maxTicks && !Done) {
-        for (int i=0; i<[nematodes count]; i++) [[nematodes objectAtIndex:i] reproduceViruses];
+        for (int i=0; i<[nematodes count]; i++) [nematodes[i] reproduceViruses];
         if (simTicks % reportInterval==0) [self report];
         if (simTicks % 24==0) {
             [environment increment_age:24];
             [soybean growIncrement:1 temp:[environment temperature]];
             [self removeDeadNematodes];
-            for (int i=0; i<[nematodes count]; i++) [[nematodes objectAtIndex:i] growBy: 1];
+            for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
         }
         simTicks ++;
         //NSLog(@"%d", simTicks);
@@ -119,7 +119,7 @@
 -(NSArray*) getArrayWithProperty: (NSString*) property ForArray: (NSArray*) array {
     NSMutableArray *prop_array = [[NSMutableArray alloc] init];
     for (int i=0; i<[array count]; i++) {
-        id value = [[array objectAtIndex:i] valueForKey: property];
+        id value = [array[i] valueForKey: property];
         [prop_array addObject:value];
     }
     return prop_array;
@@ -136,14 +136,14 @@
 
 -(void) report {
     
-    [report_dict setObject:[NSNumber numberWithInt:simTicks] forKey:@"Tick"];
-    [report_dict setObject: [NSNumber numberWithInt:[environment temperature]] forKey: @"Temperature"];
-    [report_dict setObject: [NSNumber numberWithFloat:[soybean PlantSize]] forKey: @"Soybean"];
-    [report_dict setObject: [NSNumber numberWithUnsignedLong:[nematodes count]] forKey: @"Nematodes"];
+    report_dict[@"Tick"] = @(simTicks);
+    report_dict[@"Temperature"] = [NSNumber numberWithInt:[environment temperature]];
+    report_dict[@"Soybean"] = [NSNumber numberWithFloat:[soybean PlantSize]];
+    report_dict[@"Nematodes"] = @([nematodes count]);
     
     NSArray *stats_health = [self getStatsForProperty:@"Health" ForArray:nematodes];
-    [report_dict setObject: stats_health[0] forKey: @"Health mean"];
-    [report_dict setObject: stats_health[1] forKey: @"Health stdev"];
+    report_dict[@"Health mean"] = stats_health[0];
+    report_dict[@"Health stdev"] = stats_health[1];
     if ([stats_health[0] floatValue] > 100) {
         printf ("Ping!\n");
     }
@@ -151,34 +151,34 @@
     NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
     NSArray *vir_arrays = [self getArrayWithProperty:@"Viruses" ForArray:nematodes];
     for (int i=0; i<[vir_arrays count]; i++) {
-        [vir_acc addObjectsFromArray:[vir_arrays objectAtIndex: i]];
+        [vir_acc addObjectsFromArray:vir_arrays[i]];
     }
     
-    [report_dict setObject: [NSNumber numberWithFloat:[vir_acc count]/(float)[nematodes count]] forKey: @"Virus Load"];
+    report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
     
     NSArray *trans_stats = [self getStatsForProperty:@"Transmissibility" ForArray:vir_acc];
-    [report_dict setObject: trans_stats[0] forKey: @"Transmissibility mean"];
-    [report_dict setObject: trans_stats[1] forKey: @"Transmissibility stdev"];
+    report_dict[@"Transmissibility mean"] = trans_stats[0];
+    report_dict[@"Transmissibility stdev"] = trans_stats[1];
     
     NSArray *vir_stats = [self getStatsForProperty:@"Virulence" ForArray:vir_acc];
-    [report_dict setObject: vir_stats[0] forKey: @"Virulence mean"];
-    [report_dict setObject: vir_stats[1] forKey: @"Virulence stdev"];
+    report_dict[@"Virulence mean"] = vir_stats[0];
+    report_dict[@"Virulence stdev"] = vir_stats[1];
     
     NSArray *burst_stats = [self getStatsForProperty:@"BurstSize" ForArray:vir_acc];
-    [report_dict setObject: burst_stats[0] forKey: @"BurstSize mean"];
-    [report_dict setObject: burst_stats[1] forKey: @"BurstSize stdev"];
+    report_dict[@"BurstSize mean"] = burst_stats[0];
+    report_dict[@"BurstSize stdev"] = burst_stats[1];
     
-    NSArray *stateNames = [[NSArray alloc] initWithObjects: @"Embryo", @"J1", @"J2", @"J3", \
-                           @"J4M", @"J4F", @"M", @"F", @"F_Prime", @"EggSac", @"Dead", @"Mating", nil];
+    NSArray *stateNames = @[@"Embryo", @"J1", @"J2", @"J3", \
+                           @"J4M", @"J4F", @"M", @"F", @"F_Prime", @"EggSac", @"Dead", @"Mating"];
     
     for (int i=0; i<[stateNames count]; i++) {
         NSArray *partition = [self partitionArrayforState:i];
-        NSNumber *statecount = [NSNumber numberWithUnsignedLong:[partition count]];
-        [report_dict setObject:statecount forKey:[stateNames objectAtIndex:i]];
+        NSNumber *statecount = @([partition count]);
+        report_dict[stateNames[i]] = statecount;
         if (i==EGGSAC) {
             NSArray *eggs_stats = [self getStatsForProperty:@"NumEggs" ForArray:partition];
-            [report_dict setObject: eggs_stats[0] forKey: @"Eggs per sac mean"];
-            [report_dict setObject: eggs_stats[1] forKey: @"Eggs per sac stdev"];
+            report_dict[@"Eggs per sac mean"] = eggs_stats[0];
+            report_dict[@"Eggs per sac stdev"] = eggs_stats[1];
         }
         
     }
@@ -215,13 +215,13 @@
         runningTotal += [number floatValue];
     }
     
-    return [NSNumber numberWithFloat:(runningTotal / [array count])];
+    return @(runningTotal / [array count]);
 }
 
 -(NSArray*) meanAndStandardDeviationOf:(NSArray*) array {
     
-    if(![array count]) return [[NSArray alloc] initWithObjects:[NSNumber numberWithInt:0],\
-                               [NSNumber numberWithInt:0], nil];
+    if(![array count]) return @[@0,\
+                               @0];
     
     NSNumber *average = [self meanOf: array];
     float mean = [average floatValue];
@@ -236,7 +236,7 @@
     
     NSNumber* sd= [NSNumber numberWithFloat:sqrt(sumOfSquaredDifferences / [array count])];
     
-    return [[NSArray alloc] initWithObjects:average, sd, nil];
+    return @[average, sd];
 }
 
 @end
