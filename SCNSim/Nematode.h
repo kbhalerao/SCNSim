@@ -37,24 +37,19 @@
 #define INCUBATE_TEMP 61
 
 
-@interface Nematode : NSObject
-{
-    int State;
-    NSMutableArray* Viruses;
-    int Age;
-    float Health;
-    int NumEggs;
+@interface Nematode : NSObject {
     Simulation* Sim;
+
 }
+
+@property int State;
+@property (retain) NSMutableArray* Viruses;
+@property int Age;
+@property float Health;
+@property int NumEggs;
 
 -(Nematode*) initWithState: (int) state inSim: (Simulation*) sim;
 -(void) incrementAge: (int) increment;
 -(void) reproduceViruses;
 -(void) growBy: (int) increment;
--(void) setNumEggs: (int) numeggs;
--(void) setViruses: (NSArray*) viruses;
--(float) Health;
--(int) NumEggs;
--(void) setState: (int) state;
--(int) State;
 @end

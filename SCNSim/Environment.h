@@ -9,9 +9,9 @@
 #import <Foundation/Foundation.h>
 
 @interface Environment : NSObject
-{
-    int Age;
-}
+
+@property (readonly) int Age;
+
 -(Environment*) init;
 -(float) temperature;
 -(int) Age;

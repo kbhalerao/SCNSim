@@ -9,18 +9,15 @@
 #import <Foundation/Foundation.h>
 
 @interface Virus : NSObject {
-    int BurstSize;
-    float Transmissibility;
-    float Virulence;
-}
--(Virus*) initWithVirulence:(float)Virulence Transmissibility:(float)Transmissibility BurstSize:(int)BurstSize;
--(int) BurstSize;
--(float) Transmissibility;
--(float) Virulence;
 
--(void) setBurstSize: (int) newburst;
--(void) setTransmissibility: (float) newtransmissibility;
--(void) setVirulence: (float) newvirulence;
+}
+
+@property int BurstSize;
+@property float Transmissibility;
+@property float Virulence;
+
+-(Virus*) initWithVirulence:(float)Virulence Transmissibility:(float)Transmissibility BurstSize:(int)BurstSize;
+
 
 -(void) mutate: (float) probability;
 @end

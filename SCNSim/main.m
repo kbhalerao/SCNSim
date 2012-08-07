@@ -14,9 +14,10 @@
 
 int main(int argc, const char * argv[])
 {
-    int replicates = 1;
+    int replicates = 10;
     
     NSString *folder = @"/Users/kbhalerao/Documents/UIUC/Papers/Journals/SCNModel/burnout2/";
+    
     int numcysts[4] = {1, 5, 10, 20};
     float infectionrate[4] = {0.2, 0.4, 0.6, 0.8};
     float virload[4] = {5, 10, 50, 100};
@@ -24,6 +25,14 @@ int main(int argc, const char * argv[])
     float transmissibility[4] = {0.2, 0.4, 0.6, 0.8};
     float burstsize[4] = {4, 8, 16, 32};
     
+    /*
+    int numcysts[1] = {20};
+    float infectionrate[1] = {0.8};
+    float virload[1] = {100};
+    float virulence[] = {0.8};
+    float transmissibility[1] = {0.8};
+    float burstsize[1] = {32};
+    */
     /*
     NSString *aggfile = [NSString stringWithFormat: @"%@burnout.csv", folder];
     aggfile = [NSFileHandle fileHandleForWritingAtPath:aggfile];
@@ -35,7 +44,8 @@ int main(int argc, const char * argv[])
     }
      */
     
-    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    //dispatch_queue_t runner = dispatch_get_main_queue();
+    dispatch_queue_t runner = dispatch_queue_create("Runner", NULL);
     
     __block NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
     
@@ -57,23 +67,28 @@ int main(int argc, const char * argv[])
                         for (int bsize=0; bsize<sizeof(burstsize)/sizeof(int); bsize++) {
                             [dict setObject: [NSNumber numberWithInt:burstsize[bsize]]forKey:@"burstsize"];
                             
-                            for (int rep=0; rep<replicates; rep++) {
-                                dispatch_async(queue, ^{
-                                    Simulation *mysim = [[Simulation alloc]
-                                                         initForMaxTicks:3*24*365
-                                                         withCysts:[[dict objectForKey:@"cysts"] intValue]];
-                                
-                                    [mysim infectCystsAtRate:[[dict objectForKey:@"infrate"] floatValue]
-                                                     atLoads:[[dict objectForKey:@"virload"] intValue]
-                                               withVirluence:[[dict objectForKey:@"virulence"] floatValue]
-                                        withTransmissibility:[[dict objectForKey:@"transmissibility"] floatValue]
-                                               withBurstSize:[[dict objectForKey:@"burstsize"] intValue]];
+                            for (int i=0; i<replicates; i++) {
+                                dispatch_async(runner, ^{
+                                    @autoreleasepool {
+                                        
+                                        Simulation *mysim = [[Simulation alloc]
+                                                             initForMaxTicks:3*24*365
+                                                             withCysts:[[dict objectForKey:@"cysts"] intValue]];
                                     
-                                    NSUUID *unique = [NSUUID UUID];
-                                    NSString *filename = [NSString stringWithFormat: @"%@%@.csv", folder, [unique UUIDString]];
-                                    [mysim setLogFile:filename];
-                                    [mysim run];
-
+                                        [mysim infectCystsAtRate:[[dict objectForKey:@"infrate"] floatValue]
+                                                         atLoads:[[dict objectForKey:@"virload"] intValue]
+                                                   withVirluence:[[dict objectForKey:@"virulence"] floatValue]
+                                            withTransmissibility:[[dict objectForKey:@"transmissibility"] floatValue]
+                                                   withBurstSize:[[dict objectForKey:@"burstsize"] intValue]];
+                                        
+                                        NSUUID *unique = [NSUUID UUID];
+                                        NSString *filename = [NSString stringWithFormat: @"%@%@.csv", folder, [unique UUIDString]];
+                                        [mysim setLogFile:filename];
+                                        NSLog(@"%@\n", filename);
+                                        //dispatch_async(runner, ^{
+                                            NSLog(@"%i",[mysim run]);
+                                        //});
+                                    }
                                 });
                             }
                         }
@@ -82,6 +97,13 @@ int main(int argc, const char * argv[])
             }
         }
     }
+    dispatch_sync(runner, ^{
+        NSLog(@"AllDone!");
+        exit(0);
+    });
+    
+    dispatch_main();
+    return 0;
 }
 
 

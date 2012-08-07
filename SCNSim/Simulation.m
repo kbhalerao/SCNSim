@@ -78,17 +78,9 @@
 }
 
 -(void) removeDeadNematodes {
-    //NSLog(@"Total Nematode Count %lu\n", [nematodes count]);
-    NSPredicate *notdead = [NSPredicate predicateWithFormat:@"State != 10"]; // dead
-    //NSPredicate *dead = [NSPredicate predicateWithFormat:@"State == %i", @DEAD];
-    //NSMutableArray *livenematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:notdead];
-    //NSMutableArray *deadnematodes = (NSMutableArray*)[nematodes filteredArrayUsingPredicate:dead];
-    //NSLog(@"Live :%lu  ", [livenematodes count]);
-    //NSLog(@"Dead: %lu\n", [deadnematodes count]);
     
-    NSArray* temp = [nematodes filteredArrayUsingPredicate:notdead];
-    [nematodes removeAllObjects];
-    [nematodes addObjectsFromArray:temp];
+    [nematodes filterUsingPredicate:[NSPredicate predicateWithFormat:@"State != 10"]];
+
 }
 
 -(void) logMessage: (NSString*) logstring {
@@ -117,90 +109,81 @@
     Done = TRUE;
 }
 
--(NSArray*) getArrayWithProperty: (NSString*) property ForArray: (NSArray*) array {
-    NSMutableArray *prop_array = [[NSMutableArray alloc] init];
-    for (int i=0; i<[array count]; i++) {
-        id value = [array[i] valueForKey: property];
-        [prop_array addObject:value];
-    }
-    return prop_array;
-}
-
--(NSArray*) getStatsForProperty: (NSString*) property ForArray: (NSArray*) array {
-    return [self meanAndStandardDeviationOf:[self getArrayWithProperty:property ForArray:array]];
-}
-
--(NSArray*) partitionArrayforState: (int) state {
-    NSPredicate *fraction = [NSPredicate predicateWithFormat:@"State == %i", state];
-    return [nematodes filteredArrayUsingPredicate:fraction];
-}
-
 -(void) report {
-    
-    report_dict[@"Tick"] = @(simTicks);
-    report_dict[@"Temperature"] = [NSNumber numberWithInt:[environment temperature]];
-    report_dict[@"Soybean"] = [NSNumber numberWithFloat:[soybean PlantSize]];
-    report_dict[@"Nematodes"] = @([nematodes count]);
-    
-    NSArray *stats_health = [self getStatsForProperty:@"Health" ForArray:nematodes];
-    report_dict[@"Health mean"] = stats_health[0];
-    report_dict[@"Health stdev"] = stats_health[1];
-    if ([stats_health[0] floatValue] > 100) {
-        printf ("Ping!\n");
-    }
-    
-    NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
-    NSArray *vir_arrays = [self getArrayWithProperty:@"Viruses" ForArray:nematodes];
-    for (int i=0; i<[vir_arrays count]; i++) {
-        [vir_acc addObjectsFromArray:vir_arrays[i]];
-    }
-    
-    report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
-    
-    NSArray *trans_stats = [self getStatsForProperty:@"Transmissibility" ForArray:vir_acc];
-    report_dict[@"Transmissibility mean"] = trans_stats[0];
-    report_dict[@"Transmissibility stdev"] = trans_stats[1];
-    
-    NSArray *vir_stats = [self getStatsForProperty:@"Virulence" ForArray:vir_acc];
-    report_dict[@"Virulence mean"] = vir_stats[0];
-    report_dict[@"Virulence stdev"] = vir_stats[1];
-    
-    NSArray *burst_stats = [self getStatsForProperty:@"BurstSize" ForArray:vir_acc];
-    report_dict[@"BurstSize mean"] = burst_stats[0];
-    report_dict[@"BurstSize stdev"] = burst_stats[1];
-    
-    NSArray *stateNames = @[@"Embryo", @"J1", @"J2", @"J3", \
-                           @"J4M", @"J4F", @"M", @"F", @"F_Prime", @"EggSac", @"Dead", @"Mating"];
-    
-    for (int i=0; i<[stateNames count]; i++) {
-        NSArray *partition = [self partitionArrayforState:i];
-        NSNumber *statecount = @([partition count]);
-        report_dict[stateNames[i]] = statecount;
-        if (i==EGGSAC) {
-            NSArray *eggs_stats = [self getStatsForProperty:@"NumEggs" ForArray:partition];
-            report_dict[@"Eggs per sac mean"] = eggs_stats[0];
-            report_dict[@"Eggs per sac stdev"] = eggs_stats[1];
+    @autoreleasepool {
+        
+        report_dict[@"Tick"] = @(simTicks);
+        report_dict[@"Temperature"] = [NSNumber numberWithInt:[environment temperature]];
+        report_dict[@"Soybean"] = [NSNumber numberWithFloat:[soybean PlantSize]];
+        report_dict[@"Nematodes"] = @([nematodes count]);
+        
+        NSArray *stats_health = [self meanAndStandardDeviationOf:[nematodes valueForKey:@"Health"]];
+        report_dict[@"Health mean"] = stats_health[0];
+        report_dict[@"Health stdev"] = stats_health[1];
+        if ([stats_health[0] floatValue] > 100) {
+            printf ("Ping!\n");
         }
         
+        NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
+        NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
+        //NSArray *vir_arrays = [self getArrayWithProperty:@"Viruses" ForArray:nematodes];
+        for (int i=0; i<[vir_arrays count]; i++) {
+            [vir_acc addObjectsFromArray:vir_arrays[i]];
+        }
+        
+        report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
+        
+        //NSArray *trans_stats = [self getStatsForProperty:@"Transmissibility" ForArray:vir_acc];
+        NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
+        report_dict[@"Transmissibility mean"] = trans_stats[0];
+        report_dict[@"Transmissibility stdev"] = trans_stats[1];
+        
+        NSArray *vir_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Virulence"]];
+        report_dict[@"Virulence mean"] = vir_stats[0];
+        report_dict[@"Virulence stdev"] = vir_stats[1];
+        
+        NSArray *burst_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"BurstSize"]];
+        report_dict[@"BurstSize mean"] = burst_stats[0];
+        report_dict[@"BurstSize stdev"] = burst_stats[1];
+        
+        NSArray *stateNames = @[@"Embryo", @"J1", @"J2", @"J3", \
+                               @"J4M", @"J4F", @"M", @"F", @"F_Prime", @"EggSac", @"Dead", @"Mating"];
+        
+        for (int i=0; i<[stateNames count]; i++) {
+            @autoreleasepool {
+                NSIndexSet *result = [nematodes indexesOfObjectsPassingTest:
+                                      ^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+                                          int state = [(Nematode*) obj Health];
+                                          return [[NSNumber numberWithInt:i] isEqualToNumber: [NSNumber numberWithInt:state]];
+                }];
+                NSNumber *statecount = @([result count]);
+                report_dict[stateNames[i]] = statecount;
+                if (i==EGGSAC) {
+                    NSArray *partition = [nematodes objectsAtIndexes:result];
+                    NSArray *eggs_stats = [self meanAndStandardDeviationOf:[partition valueForKey:@"NumEggs"]];
+                    report_dict[@"Eggs per sac mean"] = eggs_stats[0];
+                    report_dict[@"Eggs per sac stdev"] = eggs_stats[1];
+                }
+            }
+        }
+        
+        if (simTicks==0) {
+            // run only for the first time
+            // create the keys structure from the dictionary to use everytime
+            columns = [report_dict allKeys];
+            NSString *header = [NSString stringWithFormat: @"%@\n", [columns componentsJoinedByString:@","]];
+            [logfile writeData:[header dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+        
+        NSArray *report_values = [report_dict objectsForKeys:columns notFoundMarker:@"None"];
+        
+        NSString *report_line = [NSString stringWithFormat:@"%@\n", [report_values componentsJoinedByString:@","]];
+        [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
+        
+        if ([[report_dict valueForKey:@"Virus Load"] floatValue] <= 0.0) [self cleanup];
+        if ([nematodes count] == 0) [self cleanup];
+        // eject if the viruses or nematodes are all dead
     }
-    
-    if (simTicks==0) {
-        // run only for the first time
-        // create the keys structure from the dictionary to use everytime
-        columns = [report_dict allKeys];
-        NSString *header = [NSString stringWithFormat: @"%@\n", [columns componentsJoinedByString:@","]];
-        [logfile writeData:[header dataUsingEncoding:NSUTF8StringEncoding]];
-    }
-    
-    NSArray *report_values = [report_dict objectsForKeys:columns notFoundMarker:@"None"];
-    
-    NSString *report_line = [NSString stringWithFormat:@"%@\n", [report_values componentsJoinedByString:@","]];
-    [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
-    
-    if ([[report_dict valueForKey:@"Virus Load"] floatValue] <= 0.0) [self cleanup];
-    if ([nematodes count] == 0) [self cleanup];
-    // eject if the viruses or nematodes are all dead
-    
 }
 
 //// Statistical functions
@@ -209,35 +192,40 @@
 // code adapted from StackOverflow
 
 -(NSNumber*) meanOf:(NSArray *)array {
-    float runningTotal = 0.0;
-    
-    for(NSNumber *number in array)
-    {
-        runningTotal += [number floatValue];
-    }
-    
-    return @(runningTotal / [array count]);
+    @autoreleasepool {
+        
+        float runningTotal = 0.0;
+            
+            for(NSNumber *number in array)
+            {
+                runningTotal += [number floatValue];
+            }
+        
+        return @(runningTotal / [array count]);
+    }    
 }
 
 -(NSArray*) meanAndStandardDeviationOf:(NSArray*) array {
+    @autoreleasepool {
     
-    if(![array count]) return @[@0,\
-                               @0];
-    
-    NSNumber *average = [self meanOf: array];
-    float mean = [average floatValue];
-    float sumOfSquaredDifferences = 0.0;
-    
-    for(NSNumber *number in array)
-    {
-        float valueOfNumber = [number floatValue];
-        float difference = valueOfNumber - mean;
-        sumOfSquaredDifferences += difference * difference;
+        if(![array count]) return @[@0,@0];
+        else {
+            NSNumber *average = [self meanOf: array];
+            float mean = [average floatValue];
+            float sumOfSquaredDifferences = 0.0;
+            
+            for(NSNumber *number in array)
+            {
+                float valueOfNumber = [number floatValue];
+                float difference = valueOfNumber - mean;
+                sumOfSquaredDifferences += difference * difference;
+            }
+            
+            NSNumber* sd= [NSNumber numberWithFloat:sqrt(sumOfSquaredDifferences / [array count])];
+            
+            return @[average, sd];
+        }
     }
-    
-    NSNumber* sd= [NSNumber numberWithFloat:sqrt(sumOfSquaredDifferences / [array count])];
-    
-    return @[average, sd];
 }
 
 @end
