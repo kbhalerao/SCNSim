@@ -14,6 +14,7 @@
 @synthesize Age;
 
 -(id) init {
+    // Returns object with age initialized to zero
     if (self = [super init]) {
         Age = 0;
     }
@@ -21,10 +22,13 @@
 }
 
 -(void) increment_age:(int)increment {
+    // Increase age by given increment
     Age += increment;
 }
 
 -(float) temperature {
+    // returns a uniformly distributed temperature in F
+    // for the 'age' of the environment in hours.
     @autoreleasepool {
     
         int days = Age / 24;

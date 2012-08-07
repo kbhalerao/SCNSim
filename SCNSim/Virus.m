@@ -14,24 +14,36 @@
 @synthesize Virulence;
 @synthesize Transmissibility;
 @synthesize BurstSize;
+@synthesize Alive;
 
-    -(Virus*) initWithVirulence:(float)virulence Transmissibility:(float)transmissibility BurstSize:(int)burstSize {
-        if (self = [super init]) {
-            [self setBurstSize: burstSize];
-            [self setTransmissibility: transmissibility];
-            [self setVirulence: virulence];
-        }
-        return self;
+-(Virus*) initWithVirulence:(float)virulence
+           Transmissibility:(float)transmissibility
+                  BurstSize:(int)burstSize {
+    
+    if (self = [super init]) {
+        BurstSize = burstSize;
+        Transmissibility = transmissibility;
+        Virulence = virulence;
+        Alive = TRUE;
     }
+    return self;
+}
 
-    -(void) mutate:(float)probability {
-        if(coin_toss(probability)) {
-            Transmissibility += random_gauss(0, 0.1);
-            Virulence += random_gauss(0, 0.1);
-            BurstSize += random_integer(-4, 4);
-        }
-        if (Transmissibility > 1) Transmissibility = 1;
-        if (Virulence > 1) Virulence = 1;
+-(void) mutate:(float)probability {
+    // modifies the genome of the virus based on a given probability
+    // sets upper limit to virulence and transmissibility as 1
+    // since these numbers are used as a probability
+    
+    if(coin_toss(probability)) {
+        Transmissibility += random_gauss(0, 0.1);
+        Virulence += random_gauss(0, 0.1);
+        BurstSize += random_integer(-4, 4);
     }
+    if (Transmissibility > 1) Transmissibility = 1;
+    if (Virulence > 1) Virulence = 1;
+    if (Transmissibility <= 0) Alive=FALSE;
+    if (Virulence <= 0) Alive=FALSE;
+    if (BurstSize <= 0) Alive=FALSE;
+}
 
 @end

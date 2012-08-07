@@ -99,6 +99,9 @@ float random_gauss(float mean, float stdev) {
     //return (float)(rand_gauss()*stdev + mean);
     float val = box_muller(mean, stdev);
     while (val < 0) {
+        // some times the number is less than zero, which is not appropriate for
+        // our use. May choose to eliminate the random_gauss function
+        // in a later version. 
         val = box_muller(mean, stdev);
     }
     return val;

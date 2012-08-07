@@ -18,7 +18,10 @@ int coin_toss(float probability); // 0 for False, 1 for True
 // return True if lesser, False if greater
 
 float random_gauss(float mean, float stdev);
-// Provides a random normal float with mean and stdev as specified
+// Provides a random normal float with mean and stdev as specified,
+// subject to the condition that the number is greater than zero.
+// An internal function will provide a 'true' normal random number
+// based on the Box-Mueller transform. 
 
 int random_integer(int lower, int upper);
 // provides a random integer between lower and upper bounds, inclusive

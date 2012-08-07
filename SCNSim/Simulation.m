@@ -29,25 +29,25 @@
     return self;
 }
 
+@synthesize soybean;
+@synthesize environment;
+@synthesize nematodes;
+@synthesize simTicks;
+@synthesize reportInterval;
+
+
 -(void) populateCysts: (int) cysts {
-    for(int i=0; i<cysts; i++) {
-        Nematode *cyst = [[Nematode alloc] initWithState:EGGSAC inSim:self];
-        [cyst setNumEggs:random_integer(300,500)];
-        [nematodes addObject:cyst];
+    @autoreleasepool {
+        for(int i=0; i<cysts; i++) {
+            Nematode *cyst = [[Nematode alloc] initWithState:EGGSAC inSim:self];
+            [cyst setNumEggs:random_integer(300,500)];
+            [nematodes addObject:cyst];
+        }
     }
 }
 
 -(void) installNewNematodes: (NSMutableArray*) new_nematodes {
     [nematodes addObjectsFromArray:new_nematodes];
-}
--(Soybean*) soybean {
-    return soybean;
-}
--(Environment*) environment {
-    return environment;
-}
--(NSMutableArray*) nematodes {
-    return nematodes;
 }
 
 -(void) setLogFile: (NSString*) logfilename {
@@ -61,24 +61,33 @@
 -(void) infectCystsAtRate: (float) infectionRate          atLoads: (int) viralLoads
             withVirluence: (float) Virulence withTransmissibility: (float) Transmissibility
             withBurstSize: (int) BurstSize {
-    for (int i=0; i<[nematodes count]; i++) {
-        if (coin_toss(infectionRate)) {
-            NSMutableArray *viruslist = [[NSMutableArray alloc] init];
-            for (int j=0; j<BurstSize; j++) {
-                Virus *virus = [[Virus alloc] initWithVirulence:Virulence
-                                               Transmissibility:Transmissibility
-                                                      BurstSize:BurstSize];
-                [virus mutate:1];
-                [viruslist addObject:virus];
+    @autoreleasepool {
+        for (int i=0; i<[nematodes count]; i++) {
+            if (coin_toss(infectionRate)) {
+                NSMutableArray *viruslist = [[NSMutableArray alloc] init];
+                for (int j=0; j<BurstSize; j++) {
+                    Virus *virus = [[Virus alloc] initWithVirulence:Virulence
+                                                   Transmissibility:Transmissibility
+                                                          BurstSize:BurstSize];
+                    [virus mutate:1];
+                    [viruslist addObject:virus];
+                }
+                [nematodes[i] setViruses:viruslist];
             }
-            [nematodes[i] setViruses:viruslist];
         }
+        NSLog(@"Infected eggs with viruses\n");
     }
-    NSLog(@"Infected eggs with viruses\n");
 }
 
 -(void) removeDeadNematodes {
     
+    @autoreleasepool {
+        NSArray *deadNematodes = [nematodes filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"State == 10"]];
+        for (Nematode *nem in deadNematodes) {
+            [nem setSim: nil];
+            [nem setViruses:nil];
+        }
+    }
     [nematodes filterUsingPredicate:[NSPredicate predicateWithFormat:@"State != 10"]];
 
 }
@@ -120,16 +129,11 @@
         NSArray *stats_health = [self meanAndStandardDeviationOf:[nematodes valueForKey:@"Health"]];
         report_dict[@"Health mean"] = stats_health[0];
         report_dict[@"Health stdev"] = stats_health[1];
-        if ([stats_health[0] floatValue] > 100) {
-            printf ("Ping!\n");
-        }
+        if ([stats_health[0] floatValue] > 100) NSLog(@"Ping!\n"); // Yikes!
         
         NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
         NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
-        //NSArray *vir_arrays = [self getArrayWithProperty:@"Viruses" ForArray:nematodes];
-        for (int i=0; i<[vir_arrays count]; i++) {
-            [vir_acc addObjectsFromArray:vir_arrays[i]];
-        }
+        for (int i=0; i<[vir_arrays count]; i++) [vir_acc addObjectsFromArray:vir_arrays[i]];
         
         report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
         
@@ -149,24 +153,27 @@
         NSArray *stateNames = @[@"Embryo", @"J1", @"J2", @"J3", \
                                @"J4M", @"J4F", @"M", @"F", @"F_Prime", @"EggSac", @"Dead", @"Mating"];
         
-        for (int i=0; i<[stateNames count]; i++) {
-            @autoreleasepool {
-                NSIndexSet *result = [nematodes indexesOfObjectsPassingTest:
-                                      ^BOOL(id obj, NSUInteger idx, BOOL *stop) {
-                                          int state = [(Nematode*) obj Health];
-                                          return [[NSNumber numberWithInt:i] isEqualToNumber: [NSNumber numberWithInt:state]];
-                                          //there is some issue here...need to fix.
-                }];
-                NSNumber *statecount = @([result count]);
-                report_dict[stateNames[i]] = statecount;
-                if (i==EGGSAC) {
-                    NSArray *partition = [nematodes objectsAtIndexes:result];
-                    NSArray *eggs_stats = [self meanAndStandardDeviationOf:[partition valueForKey:@"NumEggs"]];
-                    report_dict[@"Eggs per sac mean"] = eggs_stats[0];
-                    report_dict[@"Eggs per sac stdev"] = eggs_stats[1];
-                }
+        NSMutableArray *stateCounts = [[NSMutableArray alloc] initWithCapacity:[stateNames count]];
+        for (int i=0; i<[stateNames count]; i++) [stateCounts setObject:@0 atIndexedSubscript:i];
+        
+        @autoreleasepool {
+            for (Nematode *nem in nematodes) {
+                int st = [nem State];
+                int current_count = [[stateCounts objectAtIndex:st] intValue];
+                current_count++;
+                [stateCounts setObject: [NSNumber numberWithInt:current_count] atIndexedSubscript:st];
             }
         }
+        
+        for (int i=0; i<[stateNames count]; i++) {
+            report_dict[[stateNames objectAtIndex:i] ] = [stateCounts objectAtIndex:i];
+        }
+        
+        NSArray *eggs = [nematodes filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"State == 9"]];
+        // these are the eggsacs
+        NSArray *eggs_stats = [self meanAndStandardDeviationOf:[eggs valueForKey:@"NumEggs"]];
+        report_dict[@"Eggs per sac mean"] = eggs_stats[0];
+        report_dict[@"Eggs per sac stdev"] = eggs_stats[1];
         
         if (simTicks==0) {
             // run only for the first time

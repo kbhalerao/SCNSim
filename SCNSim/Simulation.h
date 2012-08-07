@@ -11,22 +11,21 @@
 #import "Environment.h"
 
 @interface Simulation : NSObject {
-    NSMutableArray *nematodes;
-    Soybean *soybean;
-    Environment *environment;
-    int simTicks;
     int maxTicks;
     NSFileHandle *logfile;
     NSMutableDictionary *report_dict;
     NSArray *columns;
-    int reportInterval;
     int Done;
 }
+
+@property (readonly) Soybean* soybean;
+@property (readonly) Environment *environment;
+@property NSMutableArray *nematodes;
+@property (readonly) int simTicks;
+@property int reportInterval;
+
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
 -(void) installNewNematodes: (NSMutableArray*) new_nematodes;
--(Soybean*) soybean;
--(Environment*) environment;
--(NSMutableArray*) nematodes;
 -(void) setLogFile: (NSString*) logfilename;
 -(void) infectCystsAtRate: (float) infectionRate
                   atLoads: (int) viralLoads
