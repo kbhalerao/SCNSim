@@ -45,7 +45,8 @@ int main(int argc, const char * argv[])
      */
     
     //dispatch_queue_t runner = dispatch_get_main_queue();
-    dispatch_queue_t runner = dispatch_queue_create("Runner", NULL);
+    //dispatch_queue_t runner = dispatch_queue_create("Runner", NULL);
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
     
     __block NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
     
@@ -68,7 +69,7 @@ int main(int argc, const char * argv[])
                             [dict setObject: [NSNumber numberWithInt:burstsize[bsize]]forKey:@"burstsize"];
                             
                             for (int i=0; i<replicates; i++) {
-                                dispatch_async(runner, ^{
+                                dispatch_async(queue, ^{
                                     @autoreleasepool {
                                         
                                         Simulation *mysim = [[Simulation alloc]
@@ -97,7 +98,7 @@ int main(int argc, const char * argv[])
             }
         }
     }
-    dispatch_sync(runner, ^{
+    dispatch_sync(queue, ^{
         NSLog(@"AllDone!");
         exit(0);
     });

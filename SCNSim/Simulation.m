@@ -155,6 +155,7 @@
                                       ^BOOL(id obj, NSUInteger idx, BOOL *stop) {
                                           int state = [(Nematode*) obj Health];
                                           return [[NSNumber numberWithInt:i] isEqualToNumber: [NSNumber numberWithInt:state]];
+                                          //there is some issue here...need to fix.
                 }];
                 NSNumber *statecount = @([result count]);
                 report_dict[stateNames[i]] = statecount;
