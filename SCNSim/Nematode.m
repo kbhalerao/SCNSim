@@ -67,13 +67,13 @@ static int nematode_state_table[10][2]  =
 
 }
 -(void) reproduceViruses {
-    [self cure_viruses];
+    
     // first get rid of dead viruses
     float burden = 0;
     if ([Viruses count] < 30 && [Viruses count] > 0 && \
                 State != EGGSAC && State != DEAD) {
         // only run if there aren't enough viruses already
-        
+        [self cure_viruses];
         
         // variable to store viral burden
         
@@ -113,7 +113,7 @@ static int nematode_state_table[10][2]  =
 
 -(void) develop {
     // embryo develops into a J1 nematode
-    if (coin_toss((float)Health/100)) {
+    if (!coin_toss((float)Health/100)) {
         State = J1;
         Age = 0;
     }
@@ -150,6 +150,7 @@ static int nematode_state_table[10][2]  =
     // J2 successfully burrows into soybean plant and becomes J3
     if (coin_toss([[Sim soybean] getHospitability])) {
         State = J3;
+        Health = 100; // refreshed nematodes!
         Age = 0;
     }
 }
@@ -173,7 +174,7 @@ static int nematode_state_table[10][2]  =
 }
 
 -(void) differentiate {
-    if (coin_toss((float)Health/100.0)) {
+    if (!coin_toss((float)Health/100.0)) {
         Age = 0;
         if (coin_toss(0.5)) {
             State = J4M;
@@ -233,14 +234,13 @@ static int nematode_state_table[10][2]  =
                     
                     Nematode *baby = [[Nematode alloc] initWithState:EMBRYO inSim: Sim];
                     
-                    float vir_per_egg = [Viruses count]/(NumEggs+num_incubate);
+                    float vir_per_egg = [Viruses count]/(float)(NumEggs+num_incubate);
                     
-                    int guaranteed_viruses = (int)vir_per_egg;
-                    while (guaranteed_viruses >0) {
+                    while (vir_per_egg >1) {
                         [self moveSingleVirusToHost:baby];
-                        guaranteed_viruses -= 1;
+                        vir_per_egg -= 1;
                     }
-                    float vir_xmit_prob = MIN(1,guaranteed_viruses);
+                    float vir_xmit_prob = MIN(1,vir_per_egg);
                     
                     if (coin_toss(vir_xmit_prob)) {
                         [self moveSingleVirusToHost:baby];

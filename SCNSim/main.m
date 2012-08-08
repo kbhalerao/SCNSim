@@ -16,24 +16,24 @@ int main(int argc, const char * argv[])
 {
     int replicates = 10;
     
-    NSString *folder = [@"~/Documents/UIUC/Papers/Journals/SCNModel/burnout2/" stringByExpandingTildeInPath];
+    NSString *folder = [@"~/Documents/UIUC/Papers/Journals/SCNModel/burnout2" stringByExpandingTildeInPath];
 
-        /*
+        
     int numcysts[4] = {1, 5, 10, 20};
     float infectionrate[4] = {0.2, 0.4, 0.6, 0.8};
     float virload[4] = {5, 10, 50, 100};
     float virulence[4] = {0.2, 0.4, 0.6, 0.8};
     float transmissibility[4] = {0.2, 0.4, 0.6, 0.8};
     float burstsize[4] = {4, 8, 16, 32};
-        */
-
+        
+/*
     int numcysts[1] = {20};
     float infectionrate[1] = {0.8};
     int virload[1] = {100};
     float virulence[1] = {0.8};
     float transmissibility[1] = {0.8};
     float burstsize[1] = {32};
-
+*/
     /*
     NSString *aggfile = [NSString stringWithFormat: @"%@burnout.csv", folder];
     aggfile = [NSFileHandle fileHandleForWritingAtPath:aggfile];
@@ -45,9 +45,8 @@ int main(int argc, const char * argv[])
     }
      */
     
-    //dispatch_queue_t runner = dispatch_get_main_queue();
-    //dispatch_queue_t runner = dispatch_queue_create("Runner", NULL);
-    //dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
+    //dispatch_queue_t main_queue = dispatch_get_main_queue();
+    dispatch_queue_t async_queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
     
     __block NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
     
@@ -70,7 +69,7 @@ int main(int argc, const char * argv[])
                             [dict setObject: [NSNumber numberWithInt:burstsize[bsize]]forKey:@"burstsize"];
                             
                             for (int i=0; i<replicates; i++) {
-                                //dispatch_async(queue, ^{
+                                dispatch_async(async_queue, ^{
                                     @autoreleasepool {
                                         
                                         Simulation *mysim = [[Simulation alloc]
@@ -84,14 +83,14 @@ int main(int argc, const char * argv[])
                                                    withBurstSize:[[dict objectForKey:@"burstsize"] intValue]];
                                         
                                         NSUUID *unique = [NSUUID UUID];
-                                        NSString *filename = [NSString stringWithFormat: @"%@%@.csv", folder, [unique UUIDString]];
+                                        NSString *filename = [NSString stringWithFormat: @"%@/%@.csv", folder, [unique UUIDString]];
                                         [mysim setLogFile:filename];
                                         NSLog(@"%@\n", filename);
                                         //dispatch_async(runner, ^{
                                             NSLog(@"%i",[mysim run]);
                                         //});
                                     }
-                                //});
+                                });
                             }
                         }
                     }
@@ -99,12 +98,12 @@ int main(int argc, const char * argv[])
             }
         }
     }
-    //dispatch_sync(runner, ^{
-        NSLog(@"AllDone!");
-        exit(0);
+    //dispatch_sync(async_queue, ^{
+    //    NSLog(@"AllDone!");
+    //    exit(0);
     //});
     
-    //dispatch_main();
+    dispatch_main();
     return 0;
 }
 
