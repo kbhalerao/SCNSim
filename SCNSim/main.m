@@ -16,7 +16,8 @@ int main(int argc, const char * argv[])
 {
     int replicates = 10;
     
-    NSString *folder = @"~Documents/UIUC/Papers/Journals/SCNModel/burnout2/";
+    NSString *folder = [@"~/Documents/UIUC/Papers/Journals/SCNModel/burnout2/" stringByExpandingTildeInPath];
+
         /*
     int numcysts[4] = {1, 5, 10, 20};
     float infectionrate[4] = {0.2, 0.4, 0.6, 0.8};

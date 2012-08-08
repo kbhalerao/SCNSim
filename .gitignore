@@ -2,3 +2,7 @@ SCNSim.xcodeproj/*
 *.xcuserstate
 
 SCNSim.xcodeproj/project.xcworkspace/xcuserdata/kbhalerao.xcuserdatad/UserInterfaceState.xcuserstate
+
+*.xcbkptlist
+
+*.xcbkptlist
