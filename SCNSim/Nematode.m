@@ -223,7 +223,8 @@ static int nematode_state_table[10][2]  =
 -(void) incubate {
     if ([[Sim environment] temperature] > INCUBATE_TEMP) {
         @autoreleasepool {
-            int num_incubate = MIN((int)random_gauss(NumEggs/10.0, NumEggs/10.0), NumEggs);
+            //int num_incubate = MIN((int)random_gauss(NumEggs/10.0, NumEggs/10.0), NumEggs);
+            int num_incubate = random_integer(0, NumEggs);
             NumEggs -= num_incubate;
             
             if(NumEggs == 0 || Health <= 0) State = DEAD;

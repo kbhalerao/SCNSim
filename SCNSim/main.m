@@ -14,26 +14,37 @@
 
 int main(int argc, const char * argv[])
 {
-    int replicates = 10;
+    int replicates = 3;
     
-    NSString *folder = [@"~/Documents/UIUC/Papers/Journals/SCNModel/burnout2" stringByExpandingTildeInPath];
-
+    NSString *folder = [@"~/Documents/UIUC/Papers/Journals/SCNModel/burnout3" stringByExpandingTildeInPath];
+    NSString *agg_log = [@"~/Documents/UIUC/Papers/Journals/SCNModel/burnout3.csv" stringByExpandingTildeInPath];
+    [[NSFileManager defaultManager] createFileAtPath:agg_log contents:nil attributes:nil];
+    NSFileHandle *agglog = [NSFileHandle fileHandleForWritingAtPath:agg_log];
+    if (agglog == nil) {
+        NSLog(@"Failed to open file\n");
+    }
+    
+    NSString *header = @"Cysts, InfectionRate, ViralLoad, Virulence, Transmissibility, BurstSize, MaxTicks, Filename\n";
         
+    [agglog writeData:[header dataUsingEncoding:NSUTF8StringEncoding]];
+
+
+/*
     int numcysts[4] = {1, 5, 10, 20};
     float infectionrate[4] = {0.2, 0.4, 0.6, 0.8};
     float virload[4] = {5, 10, 50, 100};
     float virulence[4] = {0.2, 0.4, 0.6, 0.8};
     float transmissibility[4] = {0.2, 0.4, 0.6, 0.8};
     float burstsize[4] = {4, 8, 16, 32};
-        
-/*
-    int numcysts[1] = {20};
-    float infectionrate[1] = {0.8};
-    int virload[1] = {100};
-    float virulence[1] = {0.8};
-    float transmissibility[1] = {0.8};
-    float burstsize[1] = {32};
-*/
+*/        
+
+    int numcysts[] = {20};
+    float infectionrate[] = {0.8};
+    int virload[] = {10};
+    float virulence[] = {0.1, 0.9};
+    float transmissibility[] = {0.8};
+    float burstsize[] = {32};
+
     /*
     NSString *aggfile = [NSString stringWithFormat: @"%@burnout.csv", folder];
     aggfile = [NSFileHandle fileHandleForWritingAtPath:aggfile];
@@ -69,7 +80,7 @@ int main(int argc, const char * argv[])
                             [dict setObject: [NSNumber numberWithInt:burstsize[bsize]]forKey:@"burstsize"];
                             
                             for (int i=0; i<replicates; i++) {
-                                dispatch_async(async_queue, ^{
+                                dispatch_async(async_queue, [^{
                                     @autoreleasepool {
                                         
                                         Simulation *mysim = [[Simulation alloc]
@@ -85,12 +96,24 @@ int main(int argc, const char * argv[])
                                         NSUUID *unique = [NSUUID UUID];
                                         NSString *filename = [NSString stringWithFormat: @"%@/%@.csv", folder, [unique UUIDString]];
                                         [mysim setLogFile:filename];
-                                        NSLog(@"%@\n", filename);
-                                        //dispatch_async(runner, ^{
-                                            NSLog(@"%i",[mysim run]);
+                                        //NSLog(@"%@\n", filename);
+                                        //dispatch_async(async_queue, ^{
+                                        int runs = [mysim run];
+                                        //@"Cysts, InfectionRate, ViralLoad, Virulence, Transmisibility, BurstSize, MaxTicks, Filename\n"
+                                        NSString *iteration = [NSString stringWithFormat:@"%d,%.2f,%d,%.2f,%.2f,%d,%d,%@\n",
+                                                               [dict[@"cysts"] intValue],
+                                                               [dict[@"infrate"] floatValue],
+                                                               [dict[@"virload"] intValue],
+                                                               [dict[@"virulence"] floatValue],
+                                                               [dict[@"transmissibility"] floatValue],
+                                                               [dict[@"burstsize"] intValue],
+                                                               runs,
+                                                               [unique UUIDString]];
+                                        [agglog writeData:[iteration dataUsingEncoding:NSUTF8StringEncoding]];
+                                        NSLog(@"%@", iteration);
                                         //});
                                     }
-                                });
+                                } copy]);
                             }
                         }
                     }

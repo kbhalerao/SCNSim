@@ -69,7 +69,7 @@
                     Virus *virus = [[Virus alloc] initWithVirulence:Virulence
                                                    Transmissibility:Transmissibility
                                                           BurstSize:BurstSize];
-                    [virus mutate:1];
+                    //[virus mutate:1];
                     [viruslist addObject:virus];
                 }
                 [nematodes[i] setViruses:viruslist];
