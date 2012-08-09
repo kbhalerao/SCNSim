@@ -70,7 +70,7 @@ static int nematode_state_table[10][2]  =
     
     // first get rid of dead viruses
     float burden = 0;
-    if ([Viruses count] < 30 && [Viruses count] > 0 && \
+    if ([Viruses count] > 0 && [Viruses count] <= 100 && \
                 State != EGGSAC && State != DEAD) {
         // only run if there aren't enough viruses already
         [self cure_viruses];
@@ -174,7 +174,7 @@ static int nematode_state_table[10][2]  =
 }
 
 -(void) differentiate {
-    if (!coin_toss((float)Health/100.0)) {
+    if (coin_toss((float)Health/100.0)) {
         Age = 0;
         if (coin_toss(0.5)) {
             State = J4M;
@@ -223,33 +223,37 @@ static int nematode_state_table[10][2]  =
 -(void) incubate {
     if ([[Sim environment] temperature] > INCUBATE_TEMP) {
         @autoreleasepool {
-            //int num_incubate = MIN((int)random_gauss(NumEggs/10.0, NumEggs/10.0), NumEggs);
-            int num_incubate = random_integer(0, NumEggs);
-            NumEggs -= num_incubate;
-            
-            if(NumEggs == 0 || Health <= 0) State = DEAD;
-            
+            int num_incubate = 0;
+            if (coin_toss(0.5)) {
+                num_incubate = 1;
+            }
+            //int num_incubate = random_integer(0, NumEggs);
+
             NSMutableArray *new_nematodes = [[NSMutableArray alloc] initWithCapacity:num_incubate];
             for (int i=0; i<num_incubate; i++) {
                 @autoreleasepool {
                     
                     Nematode *baby = [[Nematode alloc] initWithState:EMBRYO inSim: Sim];
                     
-                    float vir_per_egg = [Viruses count]/(float)(NumEggs+num_incubate);
-                    
-                    while (vir_per_egg >1) {
-                        [self moveSingleVirusToHost:baby];
-                        vir_per_egg -= 1;
-                    }
-                    float vir_xmit_prob = MIN(1,vir_per_egg);
-                    
-                    if (coin_toss(vir_xmit_prob)) {
-                        [self moveSingleVirusToHost:baby];
+                    if ([Viruses count] > 0) {
+                        float vir_per_egg = [Viruses count]/(float)(NumEggs);
+                        
+                        while (vir_per_egg >1) {
+                            [self moveSingleVirusToHost:baby];
+                            vir_per_egg -= 1;
+                        }
+                        float vir_xmit_prob = MIN(1,vir_per_egg);
+                        
+                        if (coin_toss(vir_xmit_prob)) {
+                            [self moveSingleVirusToHost:baby];
+                        }
                     }
                     // we get a probability of
                     [new_nematodes addObject:baby];
+                    NumEggs--;
                 }
             }
+            if(NumEggs <=2 || Health <= 0) State = DEAD;
             [Sim installNewNematodes: new_nematodes];
         }
     }
@@ -264,7 +268,7 @@ static int nematode_state_table[10][2]  =
 }
 
 -(void) produceEggs {
-    if (!coin_toss(Health/100)) {
+    if (!coin_toss(Health/100.0)) {
         State = EGGSAC;
         NumEggs = random_integer(300,500);
         Age = 0;

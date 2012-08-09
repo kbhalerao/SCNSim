@@ -21,7 +21,7 @@
 -(void) growIncrement: (int) increment temp: (float) temperature {
     Age += increment;
     Age = Age % 365;
-    if (Germinated == 0 && Age <= GERMINATEDATE) {
+    if (Germinated == 0) {
         [SoilTemp addObject:@(temperature)];
         if ([SoilTemp count] > 3) {
             [SoilTemp removeObjectAtIndex:0];
@@ -63,7 +63,7 @@
 -(int) Age {
     return Age;
 }
--(int) PlantSize {
+-(float) PlantSize {
     return PlantSize;
 }
 @end

@@ -69,7 +69,7 @@
                     Virus *virus = [[Virus alloc] initWithVirulence:Virulence
                                                    Transmissibility:Transmissibility
                                                           BurstSize:BurstSize];
-                    //[virus mutate:1];
+                    [virus mutate:1];
                     [viruslist addObject:virus];
                 }
                 [nematodes[i] setViruses:viruslist];
@@ -122,8 +122,8 @@
     @autoreleasepool {
         
         report_dict[@"Tick"] = @(simTicks);
-        report_dict[@"Temperature"] = [NSNumber numberWithInt:[environment temperature]];
-        report_dict[@"Soybean"] = [NSNumber numberWithFloat:[soybean PlantSize]];
+        report_dict[@"Temperature"] = @([environment temperature]);
+        report_dict[@"Soybean"] = @([soybean PlantSize]);
         report_dict[@"Nematodes"] = @([nematodes count]);
         
         NSArray *stats_health = [self meanAndStandardDeviationOf:[nematodes valueForKey:@"Health"]];
@@ -159,14 +159,14 @@
         @autoreleasepool {
             for (Nematode *nem in nematodes) {
                 int st = [nem State];
-                int current_count = [[stateCounts objectAtIndex:st] intValue];
+                int current_count = [stateCounts[st] intValue];
                 current_count++;
-                [stateCounts setObject: [NSNumber numberWithInt:current_count] atIndexedSubscript:st];
+                [stateCounts setObject: @(current_count) atIndexedSubscript:st];
             }
         }
         
         for (int i=0; i<[stateNames count]; i++) {
-            report_dict[[stateNames objectAtIndex:i] ] = [stateCounts objectAtIndex:i];
+            report_dict[stateNames[i] ] = stateCounts[i];
         }
         
         NSArray *eggs = [nematodes filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"State == 9"]];
@@ -188,8 +188,8 @@
         NSString *report_line = [NSString stringWithFormat:@"%@\n", [report_values componentsJoinedByString:@","]];
         [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
         
-        if ([[report_dict valueForKey:@"Virus Load"] floatValue] <= 0.0) [self cleanup];
-        if ([nematodes count] == 0) [self cleanup];
+        //if (![vir_acc count]) [self cleanup];
+        if (![nematodes count]) [self cleanup];
         // eject if the viruses or nematodes are all dead
     }
 }
@@ -229,7 +229,7 @@
                 sumOfSquaredDifferences += difference * difference;
             }
             
-            NSNumber* sd= [NSNumber numberWithFloat:sqrt(sumOfSquaredDifferences / [array count])];
+            NSNumber* sd= @(sqrt(sumOfSquaredDifferences / [array count]));
             
             return @[average, sd];
         }

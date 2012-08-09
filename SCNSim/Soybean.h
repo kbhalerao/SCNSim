@@ -25,6 +25,6 @@
 -(float) getFoodwithFeedRate: (float) feedrate;
 -(float) getHospitability;
 -(int) Age;
--(int) PlantSize;
+-(float) PlantSize;
 
 @end
