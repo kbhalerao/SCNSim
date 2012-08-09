@@ -16,7 +16,7 @@ int main(int argc, const char * argv[])
 {
     
     @autoreleasepool {
-        int replicates = 1;
+        int replicates = 100;
         
         [[NSFileManager defaultManager] createFileAtPath:[@"~/Documents/UIUC/Papers/Journals/SCNModel/novirus.csv" stringByExpandingTildeInPath] contents:nil attributes:nil];
         __block NSFileHandle *agglog = [NSFileHandle fileHandleForWritingAtPath:[@"~/Documents/UIUC/Papers/Journals/SCNModel/novirus.csv" stringByExpandingTildeInPath]];
@@ -38,7 +38,7 @@ int main(int argc, const char * argv[])
          float burstsize[4] = {4, 8, 16, 32};
          */
         
-        int numcysts[] = {20, 30, 40, 50};
+        int numcysts[] = {16,18,20,21,22,23,24,25,26,27,28,29,30,32,34};
         float infectionrate[] = {0};
         int virload[] = {100};
         float virulence[] = {0.1};
@@ -56,8 +56,10 @@ int main(int argc, const char * argv[])
          }
          */
         
-        dispatch_queue_t main_queue = dispatch_get_main_queue();
+        dispatch_queue_t io_queue = dispatch_queue_create("edu.illinois.bhalerao.io", NULL);
         dispatch_queue_t async_queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
+        dispatch_group_t group = dispatch_group_create();
+        
         NSMutableDictionary *basedict = [[NSMutableDictionary alloc] init];
         
         for (int cyst=0; cyst<sizeof(numcysts)/sizeof(int); cyst++) {
@@ -79,9 +81,11 @@ int main(int argc, const char * argv[])
                                 basedict[@"burstsize"] = @(burstsize[bsize]);
                                 
                                 for (int i=0; i<replicates; i++) {
-                                    @autoreleasepool {
+                                    
+                                    dispatch_group_async(group, io_queue, ^{
+                                        @autoreleasepool {
                                         NSDictionary *dict = [NSDictionary dictionaryWithDictionary:basedict];
-                                        dispatch_async(async_queue, ^{
+                                        dispatch_group_async(group, async_queue, ^{
                                             //[basedict self];
                                             Simulation *mysim = [[Simulation alloc]
                                                                  initForMaxTicks:1*24*365
@@ -112,12 +116,13 @@ int main(int argc, const char * argv[])
                                                                    runs,
                                                                    [unique UUIDString]];
                                             
-                                            dispatch_sync(main_queue, ^{
+                                            dispatch_group_async(group, io_queue, ^{
                                                 [agglog writeData:[iteration dataUsingEncoding:NSUTF8StringEncoding]];
                                                 NSLog(@"%@", iteration);
                                             });
                                         });
                                     }
+                                    });
                                 }
                             }
                         }
@@ -125,13 +130,7 @@ int main(int argc, const char * argv[])
                 }
             }
         }
-        //dispatch_sync(main_queue, ^{
-        //    NSLog(@"AllDone!");
-        //    exit(0);
-        //});
-        //dispatch_release(async_queue);
-        dispatch_main();
-        return 0;
+        dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
     }
 }
 
