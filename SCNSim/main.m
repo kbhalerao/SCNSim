@@ -18,8 +18,8 @@ int main(int argc, const char * argv[])
     @autoreleasepool {
         int replicates = 100;
         
-        [[NSFileManager defaultManager] createFileAtPath:[@"~/Documents/UIUC/Papers/Journals/SCNModel/novirus.csv" stringByExpandingTildeInPath] contents:nil attributes:nil];
-        __block NSFileHandle *agglog = [NSFileHandle fileHandleForWritingAtPath:[@"~/Documents/UIUC/Papers/Journals/SCNModel/novirus.csv" stringByExpandingTildeInPath]];
+        [[NSFileManager defaultManager] createFileAtPath:[@"~/Documents/UIUC/Papers/Journals/SCNModel/test.csv" stringByExpandingTildeInPath] contents:nil attributes:nil];
+        __block NSFileHandle *agglog = [NSFileHandle fileHandleForWritingAtPath:[@"~/Documents/UIUC/Papers/Journals/SCNModel/test.csv" stringByExpandingTildeInPath]];
         if (agglog == nil) {
             NSLog(@"Failed to open file\n");
         }
@@ -59,6 +59,8 @@ int main(int argc, const char * argv[])
         dispatch_queue_t io_queue = dispatch_queue_create("edu.illinois.bhalerao.io", NULL);
         dispatch_queue_t async_queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
         dispatch_group_t group = dispatch_group_create();
+        uint64_t cpuCount = [[NSProcessInfo processInfo] processorCount];
+        dispatch_semaphore_t jobSemaphore = dispatch_semaphore_create(cpuCount * 2);
         
         NSMutableDictionary *basedict = [[NSMutableDictionary alloc] init];
         
@@ -81,14 +83,16 @@ int main(int argc, const char * argv[])
                                 basedict[@"burstsize"] = @(burstsize[bsize]);
                                 
                                 for (int i=0; i<replicates; i++) {
+                                    NSDictionary *dict = [NSDictionary dictionaryWithDictionary:basedict];
                                     
+                                    dispatch_semaphore_wait(jobSemaphore, DISPATCH_TIME_FOREVER);
+
                                     dispatch_group_async(group, io_queue, ^{
                                         @autoreleasepool {
-                                        NSDictionary *dict = [NSDictionary dictionaryWithDictionary:basedict];
                                         dispatch_group_async(group, async_queue, ^{
                                             //[basedict self];
                                             Simulation *mysim = [[Simulation alloc]
-                                                                 initForMaxTicks:1*24*365
+                                                                 initForMaxTicks:10*24*365
                                                                  withCysts:[dict[@"cysts"] intValue]];
                                             
                                             [mysim infectCystsAtRate:[dict[@"infrate"] floatValue]
@@ -99,27 +103,30 @@ int main(int argc, const char * argv[])
                                             
                                             NSUUID *unique = [NSUUID UUID];
                                             NSString *filename = [NSString stringWithFormat: @"%@/%@.csv",
-                                                                  [@"~/Documents/UIUC/Papers/Journals/SCNModel/novirus" stringByExpandingTildeInPath],
+                                                                  [@"~/Documents/UIUC/Papers/Journals/SCNModel/test" stringByExpandingTildeInPath],
                                                                   [unique UUIDString]];
                                             [mysim setLogFile:filename];
                                             //NSLog(@"%@\n", filename);
                                             //dispatch_sync(async_queue, ^{
                                             int runs = [mysim run];
                                             //@"Cysts, InfectionRate, ViralLoad, Virulence, Transmisibility, BurstSize, MaxTicks, Filename\n"
-                                            NSString *iteration = [NSString stringWithFormat:@"%d,%.2f,%d,%.2f,%.2f,%d,%d,%@\n",
-                                                                   [dict[@"cysts"] intValue],
-                                                                   [dict[@"infrate"] floatValue],
-                                                                   [dict[@"virload"] intValue],
-                                                                   [dict[@"virulence"] floatValue],
-                                                                   [dict[@"transmissibility"] floatValue],
-                                                                   [dict[@"burstsize"] intValue],
-                                                                   runs,
-                                                                   [unique UUIDString]];
-                                            
-                                            dispatch_group_async(group, io_queue, ^{
-                                                [agglog writeData:[iteration dataUsingEncoding:NSUTF8StringEncoding]];
-                                                NSLog(@"%@", iteration);
-                                            });
+                                            if (runs) {
+                                                NSString *iteration = [NSString stringWithFormat:@"%d,%.2f,%d,%.2f,%.2f,%d,%d,%@\n",
+                                                                       [dict[@"cysts"] intValue],
+                                                                       [dict[@"infrate"] floatValue],
+                                                                       [dict[@"virload"] intValue],
+                                                                       [dict[@"virulence"] floatValue],
+                                                                       [dict[@"transmissibility"] floatValue],
+                                                                       [dict[@"burstsize"] intValue],
+                                                                       runs,
+                                                                       [unique UUIDString]];
+                                                
+                                                dispatch_group_async(group, io_queue, ^{
+                                                    [agglog writeData:[iteration dataUsingEncoding:NSUTF8StringEncoding]];
+                                                    NSLog(@"%@", iteration);
+                                                    dispatch_semaphore_signal(jobSemaphore);
+                                                });}
+                                            else {dispatch_semaphore_signal(jobSemaphore);}
                                         });
                                     }
                                     });
