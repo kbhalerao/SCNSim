@@ -122,9 +122,12 @@ int main(int argc, const char * argv[])
                                                                        [unique UUIDString]];
                                                 
                                                 dispatch_group_async(group, io_queue, ^{
-                                                    [agglog writeData:[iteration dataUsingEncoding:NSUTF8StringEncoding]];
-                                                    NSLog(@"%@", iteration);
-                                                    dispatch_semaphore_signal(jobSemaphore);
+                                                    
+                                                    @autoreleasepool {
+                                                        [agglog writeData:[iteration dataUsingEncoding:NSUTF8StringEncoding]];
+                                                        NSLog(@"%@", iteration);
+                                                        dispatch_semaphore_signal(jobSemaphore);
+                                                    }
                                                 });}
                                             else {dispatch_semaphore_signal(jobSemaphore);}
                                         });

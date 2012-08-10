@@ -10,32 +10,40 @@
 #import "helpers.h"
 #import "Soybean.h"
 
-// State Definitions
-//#define EMBRYO 0
-//#define J1 1
-//#define J2 2
-//#define J3 3
-//#define J4M 4
-//#define J4F 5
-//#define M 6
-//#define F 7
-//#define F_PRIME 8
-//#define EGGSAC 9
-//#define DEAD 10
+
+/* State Definitions
+ #define EMBRYO 0
+ #define J1 1 // inside the eggsac / cyst
+ #define UNHATCHEDJ2 2
+ #define J2 3 //hatched
+ #define J3 4
+ #define J4M 5
+ #define J4F 6
+ #define M 7
+ #define F 8
+ #define MATING 9
+ #define F_PRIME 10
+ #define EGGSAC 11
+ #define CYST 12
+ #define DEAD 13
+ */
 
 // nematode state table index is 0-10
 // min_days, max_days, next_state
-static int nematode_state_table[10][2]  =
-    {{1,5},     //0
-    {1,2},      //1
-    {1,6},      //2
-    {1,3},      //3
-    {9,10},     //4
-    {11,12},    //5
-    {1,14},     //6
-    {1,60},     //7
-    {1,60},     //9
-    {1,3000}};  //10
+static int nematode_state_table[14][2]  =
+            {{1,5},     //0
+            {1,2},      //1
+            {1,3000},   //2
+            {1,4},      //3
+            {3,4},      //4
+            {5,6},      //5
+            {3,4},      //6
+            {1,21},     //7
+            {2,60},     //8
+            {0,0},      //9 - mating - don't change anything.
+            {3,5},      //10
+            {1,3000},   //11
+            {1,3000}};   //12
 
 @implementation Nematode
 
@@ -43,19 +51,43 @@ static int nematode_state_table[10][2]  =
 @synthesize Viruses;
 @synthesize Age;
 @synthesize Health;
-@synthesize NumEggs;
+@synthesize NumZygotes;
+@synthesize NumUnhatchedJ2s;
 @synthesize Sim;
+@synthesize inContainer;
 
--(Nematode*) initWithState: (int) state inSim: (Simulation*) sim{
-    if (self = [super init]) {
-        Age = 0;
-        State = state;
-        Viruses = [[NSMutableArray alloc] init];
-        Health = 100;
-        NumEggs = 0;
-        Sim = sim;
+
+-(Nematode *) initWithSim: (Simulation *) sim {
+    @autoreleasepool {
+        if (self = [super init]) {
+            Age = 0;
+            State = CYST;
+            Viruses = [[NSMutableArray alloc] init];
+            Health = 100;
+            NumUnhatchedJ2s = 0;
+            NumZygotes = 0;
+            Sim = sim;
+            inContainer = nil; // not in any container
+        }
+        return self;
     }
-    return self;
+}
+
+-(Nematode*) initAsEmbryoInSim: (Simulation*) sim inContainer: (Nematode *) mommy {
+    @autoreleasepool {
+        Nematode *nem = [self initWithSim:sim];
+        [nem setInContainer:self];
+        [nem setState:EMBRYO];
+        return nem;
+    }
+}
+
+-(Nematode*) initCystWithNumUnhatchedJ2s: (int) uhj2s inSim: (Simulation*) sim {
+    @autoreleasepool {
+        Nematode *nem = [self initWithSim:sim];
+        [nem setNumUnhatchedJ2s:uhj2s];
+        return nem;
+    }
 }
 
 -(void) incrementAge: (int) increment {
@@ -68,50 +100,53 @@ static int nematode_state_table[10][2]  =
 }
 -(void) reproduceViruses {
     
-    // first get rid of dead viruses
-    float burden = 0;
-    if ([Viruses count] > 0 && [Viruses count] <= 100 && \
-                State != EGGSAC && State != DEAD) {
-        // only run if there aren't enough viruses already
-        [self cure_viruses];
-        
-        // variable to store viral burden
-        
-        NSMutableArray *newviruses = [[NSMutableArray alloc] init];
-        // Array to store new viruses
-        
-        for (int i=0; i<[Viruses count]; i++) {
-            @autoreleasepool
-            {
-                
-                if (coin_toss(Health / 100)) {
-                    // reproduce only if healthy enough
+    @autoreleasepool {
+        // first get rid of dead viruses
+        float burden = 0;
+        if ([Viruses count] > 0 && [Viruses count] <= 100 && State != UNHATCHEDJ2 &&
+            State != EGGSAC && State != DEAD && State != CYST) {
+            // only run if there aren't enough viruses already
+            [self cure_viruses];
+            
+            // variable to store viral burden
+            
+            NSMutableArray *newviruses = [[NSMutableArray alloc] init];
+            // Array to store new viruses
+            
+            for (int i=0; i<[Viruses count]; i++) {
+                @autoreleasepool
+                {
                     
-                    Virus *vir = Viruses[i];
-                    if ([vir Alive]) {
-                        for (int j=0; j<vir.BurstSize; j++) {
-                            Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
-                            [newvir mutate:0.4];
-                            [newviruses addObject: newvir];
+                    if (coin_toss(Health / 100)) {
+                        // reproduce only if healthy enough
+                        
+                        Virus *vir = Viruses[i];
+                        if ([vir Alive]) {
+                            for (int j=0; j<vir.BurstSize; j++) {
+                                Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
+                                [newvir mutate:0.4];
+                                [newviruses addObject: newvir];
+                            }
                         }
                     }
                 }
             }
+            
+            [Viruses addObjectsFromArray:newviruses];
+            for (int i=0; i<[Viruses count]; i++) {
+                burden += [Viruses[i] Virulence];
+                burden = burden / 24.0; // account for burden per hour
+            }
         }
         
-        [Viruses addObjectsFromArray:newviruses];
-        for (int i=0; i<[Viruses count]; i++) {
-            burden += [Viruses[i] Virulence];
+        if (burden > Health) {
+            State = DEAD;
         }
+        else Health = MAX(Health-burden, 0);
     }
-    
-    if (burden > Health) {
-        State = DEAD;
-    }
-    else Health = MAX(Health-burden, 0);
 }
 
--(void) develop {
+-(void) developIntoJ1 {
     // embryo develops into a J1 nematode
     if (!coin_toss((float)Health/100)) {
         State = J1;
@@ -119,24 +154,36 @@ static int nematode_state_table[10][2]  =
     }
 }
 
+-(void) developIntoUnhatchedJ2 {
+    // embryo develops into a J1 nematode
+    if (!coin_toss((float)Health/100)) {
+        State = UNHATCHEDJ2;
+        Age = 0;
+    }
+}
+
 //-(void) hatchTemp: (float) temperature Soy: (Soybean*) soy {
 -(void) hatch {
+    // unhatched J2 emerge from cyst or eggsac
     @autoreleasepool {
-    
+        /// check containder flag
+        
         int temperature = [[Sim environment] temperature];
         Soybean* soy = [Sim soybean];
         
         if (Health >0) {
             float prob_hatch = 0;
-            // assuming embryo sufficiently developed to hatch
+
             if (temperature >= HATCH_MIN_TEMP && temperature <= HATCH_MAX_TEMP) {
                 prob_hatch = Health/100.0;
                 if ([soy Age] >= SOY_HATCH_MIN && [soy Age] <= SOY_HATCH_MAX) {
-                    prob_hatch *= MIN(soy.PlantSize/SOYMAXSIZE, 1);
+                    // proxy for root exudate
+                    prob_hatch *= [soy getHospitability];
                 }
             }
             if (coin_toss(prob_hatch)) {
                 State = J2;
+                inContainer = nil;
                 Age = 0;
             }
         }
@@ -185,25 +232,28 @@ static int nematode_state_table[10][2]  =
 
 -(void) mature {
     // J4M -> M or J4F -> F
-    int nextState;
-    if (State == J4M) nextState = M;
-    else nextState = F; //(State == J4F) 
-    
-    int min_age = nematode_state_table[State][0];
-    int max_age = nematode_state_table[State][1];
-    
-    if (Age >= min_age && Age <= max_age && coin_toss(Health/100.0)) {
-        Age = 0;
-        State = nextState;
+    @autoreleasepool {
+        int nextState;
+        if (State == J4M) nextState = M;
+        else nextState = F; //(State == J4F)
+        
+        int min_age = nematode_state_table[State][0];
+        int max_age = nematode_state_table[State][1];
+        
+        if (Age >= min_age && Age <= max_age && coin_toss(Health/100.0)) {
+            Age = 0;
+            State = nextState;
+        }
     }
 }
 
 -(void) impregnateFemale: (Nematode*) fem {
+    //  boy finds girls, and transmits an STD
     @autoreleasepool {
 
         if (coin_toss([fem Health]/100.0)) {
-            int fnumeggs = MAX(random_integer(300,500), [fem NumEggs]);
-            [fem setNumEggs:fnumeggs];
+            int fnumzygotes = MAX(random_integer(300,500), [fem NumZygotes]);
+            [fem setNumZygotes:fnumzygotes];
         }
         NSMutableArray *transmitted = [[NSMutableArray alloc] init];
         for (int i=0; i<[Viruses count]; i++) {
@@ -215,63 +265,61 @@ static int nematode_state_table[10][2]  =
                 }
             }
         }
-        [fem setViruses:transmitted]; // this is an array..
+        [fem addViruses:transmitted]; // this is an array..
         [fem setState: MATING];
     }
 }
 
--(void) incubate {
-    if ([[Sim environment] temperature] > INCUBATE_TEMP) {
-        @autoreleasepool {
-            int num_incubate = 0;
-            if (coin_toss(0.5)) {
-                num_incubate = 1;
-            }
-            //int num_incubate = random_integer(0, NumEggs);
 
-            NSMutableArray *new_nematodes = [[NSMutableArray alloc] initWithCapacity:num_incubate];
-            for (int i=0; i<num_incubate; i++) {
-                @autoreleasepool {
-                    
-                    Nematode *baby = [[Nematode alloc] initWithState:EMBRYO inSim: Sim];
-                    
-                    if ([Viruses count] > 0) {
-                        float vir_per_egg = [Viruses count]/(float)(NumEggs);
-                        
-                        while (vir_per_egg >1) {
-                            [self moveSingleVirusToHost:baby];
-                            vir_per_egg -= 1;
-                        }
-                        float vir_xmit_prob = MIN(1,vir_per_egg);
-                        
-                        if (coin_toss(vir_xmit_prob)) {
-                            [self moveSingleVirusToHost:baby];
-                        }
-                    }
-                    // we get a probability of
-                    [new_nematodes addObject:baby];
-                    NumEggs--;
-                }
-            }
-            if(NumEggs <=2 || Health <= 0) State = DEAD;
-            [Sim installNewNematodes: new_nematodes];
+-(void) moveSingleVirusToHost: (Nematode*) nem {
+    @autoreleasepool {
+        Virus *random_virus = Viruses[random_integer(0,(int)([Viruses count]-1))];
+        if (coin_toss(random_virus.Transmissibility)) {
+            [[nem Viruses] addObject:random_virus];
+            [Viruses removeObject:random_virus];
         }
     }
 }
 
--(void) moveSingleVirusToHost: (Nematode*) nem {
-    Virus *random_virus = Viruses[random_integer(0,(int)([Viruses count]-1))];
-    if (coin_toss(random_virus.Transmissibility)) {
-        [[nem Viruses] addObject:random_virus];
-        [Viruses removeObject:random_virus];
-    }
-}
-
--(void) produceEggs {
-    if (!coin_toss(Health/100.0)) {
+-(void) produceEggSac {
+    // F_prime goes to eggsac - produces embryos.
+    if (coin_toss(Health/100.0)) {
         State = EGGSAC;
-        NumEggs = random_integer(300,500);
         Age = 0;
+        Health = 100;
+        // We reset health to 100 here.
+        
+        // create new nematodes from numZygotes -
+        // init them in embryo state,
+        // transfer viruses from EGGSAC to EMBRYOs
+        NSMutableArray *new_nematodes = [[NSMutableArray alloc] initWithCapacity:NumZygotes];
+        for (int i=0; i<NumZygotes; i++) {
+            @autoreleasepool {
+                
+                Nematode *baby = [[Nematode alloc] initAsEmbryoInSim:Sim inContainer:self];
+                [baby setInContainer:self];
+                
+                if ([Viruses count] > 0) {
+                    float vir_per_egg = [Viruses count]/(float)(NumZygotes);
+                    
+                    while (vir_per_egg >1) {
+                        [self moveSingleVirusToHost:baby];
+                        vir_per_egg -= 1;
+                    }
+                    float vir_xmit_prob = MIN(1,vir_per_egg);
+                    
+                    if (coin_toss(vir_xmit_prob)) {
+                        [self moveSingleVirusToHost:baby];
+                    }
+                }
+                // we get a probability of
+                [new_nematodes addObject:baby];
+                NumZygotes--;
+            }
+        }
+        
+        [Sim installNewNematodes: new_nematodes];
+        
     }
 }
 
@@ -279,9 +327,11 @@ static int nematode_state_table[10][2]  =
     [self incrementAge: increment];
     [self decrement_health];
     switch (State) {
-        case EMBRYO: [self develop]; 
+        case EMBRYO: [self developIntoJ1];
             break;
-        case J1: [self hatch];
+        case J1: [self developIntoUnhatchedJ2];
+            break;
+        case UNHATCHEDJ2: [self hatch];
             break;
         case J2: [self burrow];
             break;
@@ -299,10 +349,7 @@ static int nematode_state_table[10][2]  =
         case F: [self feed];
             break;
         case F_PRIME: [self feed];
-            [self produceEggs];
-        case EGGSAC:
-            [self incubate];
-            break;
+            [self produceEggSac];
         case MATING: [self feed];
             State = F_PRIME;
             break;
@@ -312,7 +359,7 @@ static int nematode_state_table[10][2]  =
 -(void) decrement_health {
     int min_time = nematode_state_table[State][0];
     int max_time = nematode_state_table[State][1];
-    float health_per_day = 100.0/(max_time-min_time+1); //TODO
+    float health_per_day = 100.0/(max_time-min_time+1); 
     
     if (Age >= min_time) {
         Health = MAX(Health - health_per_day, 0);
@@ -320,6 +367,16 @@ static int nematode_state_table[10][2]  =
     if (Health <= 0) {
         State = DEAD;
     }
+    if (inContainer != nil) {
+        if ([inContainer State] == DEAD) {
+            State = DEAD;
+            // I die if my container dies.
+        }
+    }
+}
+
+-(void) addViruses: (NSArray*) viruses {
+    [Viruses addObject:viruses];
 }
 
 -(void) findMate {

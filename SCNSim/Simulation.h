@@ -23,6 +23,7 @@
 @property NSMutableArray *nematodes;
 @property (readonly) int simTicks;
 @property int reportInterval;
+@property int breakIfNoViruses;
 
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
 -(void) installNewNematodes: (NSMutableArray*) new_nematodes;
@@ -33,5 +34,6 @@
      withTransmissibility: (float) Transmissibility
             withBurstSize: (int) BurstSize;
 -(int) run;
+-(void) convertEggSacsToCysts;
 
 @end

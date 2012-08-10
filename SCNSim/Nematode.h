@@ -13,17 +13,20 @@
 
 // State Definitions
 #define EMBRYO 0
-#define J1 1
-#define J2 2
-#define J3 3
-#define J4M 4
-#define J4F 5
-#define M 6
-#define F 7
-#define F_PRIME 8
-#define EGGSAC 9
-#define DEAD 10
-#define MATING 11
+#define J1 1 // inside the eggsac / cyst
+#define UNHATCHEDJ2 2
+#define J2 3 //hatched
+#define J3 4
+#define J4M 5
+#define J4F 6
+#define M 7
+#define F 8
+#define MATING 9
+#define F_PRIME 10
+#define EGGSAC 11
+#define CYST 12
+#define DEAD 13
+
 
 // Life cycle times
 #define HATCH_MIN_TEMP 61
@@ -43,11 +46,14 @@
 @property NSMutableArray* Viruses; // array containing viruses
 @property int Age;
 @property float Health; // max of 100
-@property int NumEggs;
+@property int NumZygotes;
+@property int NumUnhatchedJ2s;
 @property (weak) Simulation* Sim;
+@property (weak) Nematode * inContainer; // container =0 for eggsac, 1 for cyst.
 
--(Nematode*) initWithState: (int) state inSim: (Simulation*) sim;
+-(Nematode*) initCystWithNumUnhatchedJ2s: (int) uhj2s inSim: (Simulation*) sim;
 -(void) incrementAge: (int) increment;
 -(void) reproduceViruses;
 -(void) growBy: (int) increment;
+-(void) addViruses: (NSArray*) viruses;
 @end
