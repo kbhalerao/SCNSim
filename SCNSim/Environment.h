@@ -12,7 +12,7 @@
 
 @property (readonly) int Age;
 @property (readonly) int Temperature;
-
+@property NSArray *localEnvironment;
 
 -(Environment*) init;
 -(int) Age;

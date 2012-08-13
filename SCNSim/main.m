@@ -78,6 +78,8 @@ int main(int argc, const char * argv[])
         dispatch_semaphore_t jobSemaphore = dispatch_semaphore_create(cpuCount * 2);
         
         NSMutableDictionary *basedict = [[NSMutableDictionary alloc] init];
+        NSArray *localEnvironment = [NSArray arrayWithObjects:simDict[@"Max temperature"], simDict[@"Min temperature"], nil];
+        
         
         for (NSNumber *item_nc in numcysts) {
             basedict[@"cysts"] = item_nc;
@@ -111,6 +113,7 @@ int main(int argc, const char * argv[])
                                                                          initForMaxTicks:[simDict[@"Max ticks"] intValue]
                                                                          withCysts:[dict[@"cysts"] intValue]];
                                                     
+                                                    [[mysim environment] setLocalEnvironment:localEnvironment];
                                                     [mysim setBreakIfNoViruses:[simDict[@"Break if no viruses"] boolValue]];
                                                     
                                                     [mysim infectCystsAtRate:[dict[@"infrate"] floatValue]

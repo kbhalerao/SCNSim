@@ -35,8 +35,8 @@
 #define SOY_HATCH_MAX 100
 #define J3_FEED 0.01
 #define J4_FEED 0.01
-#define F_FEED 0.05
-#define F_PRIME_FEED 0.05
+#define F_FEED 0.02
+#define F_PRIME_FEED 0.02
 #define INCUBATE_TEMP 61
 
 
