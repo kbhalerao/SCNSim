@@ -18,8 +18,10 @@
     int Age;
     float PlantSize;
     NSMutableArray* SoilTemp;
-    int Germinated; // 0 if false, 1 if true
 }
+@property (readonly) int GerminatedAge; // -1 if not germinated, Days since germination if germinated
+@property int AlternateYears;
+
 -(Soybean*) init;
 -(void) growIncrement: (int) increment temp: (float) temperature;
 -(float) getFoodwithFeedRate: (float) feedrate;

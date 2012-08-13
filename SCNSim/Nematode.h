@@ -47,13 +47,13 @@
 @property int Age;
 @property float Health; // max of 100
 @property int NumZygotes;
-@property int NumUnhatchedJ2s;
 @property (weak) Simulation* Sim;
 @property (weak) Nematode * inContainer; // container =0 for eggsac, 1 for cyst.
 
--(Nematode*) initCystWithNumUnhatchedJ2s: (int) uhj2s inSim: (Simulation*) sim;
+-(Nematode *) initWithSim: (Simulation *) sim;
 -(void) incrementAge: (int) increment;
 -(void) reproduceViruses;
 -(void) growBy: (int) increment;
 -(void) addViruses: (NSArray*) viruses;
+-(void) dealloc;
 @end

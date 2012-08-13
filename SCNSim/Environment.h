@@ -8,12 +8,13 @@
 
 #import <Foundation/Foundation.h>
 
-@interface Environment : NSObject
+@interface Environment : NSObject 
 
 @property (readonly) int Age;
+@property (readonly) int Temperature;
+
 
 -(Environment*) init;
--(float) temperature;
 -(int) Age;
 -(void) increment_age: (int) increment;
 @end

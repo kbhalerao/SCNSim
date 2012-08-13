@@ -39,13 +39,26 @@
 @synthesize reportInterval;
 @synthesize breakIfNoViruses;
 
+-(void) dealloc {
+    environment = nil;
+    soybean = nil;
+    nematodes = nil;
+    report_dict = nil;
+}
 
 -(void) populateCysts: (int) cysts {
     @autoreleasepool {
         for(int i=0; i<cysts; i++) {
-            Nematode *cyst = [[Nematode alloc] initCystWithNumUnhatchedJ2s:random_integer(300,500)
-                                                                     inSim:self];
+            Nematode *cyst = [[Nematode alloc] initWithSim: self];
             [nematodes addObject:cyst];
+            
+            int numUnhatchedJ2 = random_integer(300,500);
+            for (int i=0; i<numUnhatchedJ2; i++) {
+                Nematode *j2u = [[Nematode alloc] initWithSim:self];
+                [j2u setInContainer: cyst];
+                [j2u setState:UNHATCHEDJ2];
+                [nematodes addObject:j2u];
+            }
         }
     }
 }
@@ -69,7 +82,7 @@
             withBurstSize: (int) BurstSize {
     @autoreleasepool {
         for (int i=0; i<[nematodes count]; i++) {
-            if (coin_toss(infectionRate)) {
+            if (coin_toss(infectionRate) && [nematodes[i] State] == UNHATCHEDJ2) {
                 NSMutableArray *viruslist = [[NSMutableArray alloc] init];
                 for (int j=0; j<BurstSize; j++) {
                     @autoreleasepool {
@@ -104,7 +117,7 @@
 
 -(void) convertEggSacsToCysts {
     
-    if([environment temperature] <68) {
+    if([environment Temperature] <68) {
         @autoreleasepool {
             NSArray *eggsacs = [nematodes filteredArrayUsingPredicate:
                                 [NSPredicate predicateWithFormat:@"State == %i", EGGSAC]];
@@ -128,13 +141,16 @@
 
 -(int) run {
     while (simTicks < maxTicks && !Done) {
-        for (int i=0; i<[nematodes count]; i++) [nematodes[i] reproduceViruses];
+        for (int i=0; i<[nematodes count]; i++) {
+            [nematodes[i] reproduceViruses];
+        }
         if (simTicks % reportInterval==0) [self report];
         if (simTicks % 24==0) {
             [environment increment_age:24];
-            [soybean growIncrement:1 temp:[environment temperature]];
+            [soybean growIncrement:1 temp:[environment Temperature]];
             [self removeDeadNematodes];
             for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
+            [self convertEggSacsToCysts];
         }
         simTicks ++;
         //NSLog(@"%d", simTicks);
@@ -152,7 +168,7 @@
     @autoreleasepool {
         
         report_dict[@"Tick"] = @(simTicks);
-        report_dict[@"Temperature"] = @([environment temperature]);
+        report_dict[@"Temperature"] = @([environment Temperature]);
         report_dict[@"Soybean"] = @([soybean PlantSize]);
         report_dict[@"Nematodes"] = @([nematodes count]);
         
@@ -163,9 +179,16 @@
         
         NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
         NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
-        for (int i=0; i<[vir_arrays count]; i++) [vir_acc addObjectsFromArray:vir_arrays[i]];
+        for (int i=0; i<[vir_arrays count]; i++) {
+            NSArray *temp = vir_arrays[i];
+            if ([temp count]>0) [vir_acc addObjectsFromArray:vir_arrays[i]];
+        }
         
         report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
+        
+        if ([vir_acc count]==0) {
+            NSLog(@"Ping!");
+        }
         
         NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
         report_dict[@"Transmissibility mean"] = trans_stats[0];
@@ -237,17 +260,20 @@
 // code adapted from StackOverflow
 
 -(NSNumber*) meanOf:(NSArray *)array {
-    @autoreleasepool {
+    //@autoreleasepool {
         
         float runningTotal = 0.0;
             
             for(NSNumber *number in array)
             {
-                runningTotal += [number floatValue];
+                @try {runningTotal += [number floatValue];}
+                @catch (NSException *e) {
+                    NSLog(@"Exception: %@", [e reason]);
+                }
             }
         
         return @(runningTotal / [array count]);
-    }    
+    //}
 }
 
 -(NSArray*) meanAndStandardDeviationOf:(NSArray*) array {

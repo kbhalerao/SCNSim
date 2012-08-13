@@ -40,7 +40,7 @@ static int nematode_state_table[14][2]  =
             {3,4},      //6
             {1,21},     //7
             {2,60},     //8
-            {0,0},      //9 - mating - don't change anything.
+            {1,21},     //9 - same as female // has no effect
             {3,5},      //10
             {1,3000},   //11
             {1,3000}};   //12
@@ -52,7 +52,6 @@ static int nematode_state_table[14][2]  =
 @synthesize Age;
 @synthesize Health;
 @synthesize NumZygotes;
-@synthesize NumUnhatchedJ2s;
 @synthesize Sim;
 @synthesize inContainer;
 
@@ -64,7 +63,6 @@ static int nematode_state_table[14][2]  =
             State = CYST;
             Viruses = [[NSMutableArray alloc] init];
             Health = 100;
-            NumUnhatchedJ2s = 0;
             NumZygotes = 0;
             Sim = sim;
             inContainer = nil; // not in any container
@@ -82,12 +80,10 @@ static int nematode_state_table[14][2]  =
     }
 }
 
--(Nematode*) initCystWithNumUnhatchedJ2s: (int) uhj2s inSim: (Simulation*) sim {
-    @autoreleasepool {
-        Nematode *nem = [self initWithSim:sim];
-        [nem setNumUnhatchedJ2s:uhj2s];
-        return nem;
-    }
+-(void) dealloc {
+    Viruses = nil;
+    Sim = nil;
+    inContainer = nil;
 }
 
 -(void) incrementAge: (int) increment {
@@ -95,44 +91,48 @@ static int nematode_state_table[14][2]  =
 }
 -(void) cure_viruses { // private method
     
-    [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive != 0"]];
+    [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
 
 }
 -(void) reproduceViruses {
     
     @autoreleasepool {
+        float burden=0;
         // first get rid of dead viruses
-        float burden = 0;
+        
         if ([Viruses count] > 0 && [Viruses count] <= 100 && State != UNHATCHEDJ2 &&
             State != EGGSAC && State != DEAD && State != CYST) {
             // only run if there aren't enough viruses already
-            [self cure_viruses];
+            [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
             
-            // variable to store viral burden
-            
-            NSMutableArray *newviruses = [[NSMutableArray alloc] init];
-            // Array to store new viruses
-            
-            for (int i=0; i<[Viruses count]; i++) {
-                @autoreleasepool
-                {
-                    
-                    if (coin_toss(Health / 100)) {
-                        // reproduce only if healthy enough
+            if ([Viruses count]) {
+                
+                NSMutableArray *new_viruses = [[NSMutableArray alloc] init];
+                for (int i=0; i<[Viruses count]; i++) {
+                    @autoreleasepool {
                         
-                        Virus *vir = Viruses[i];
-                        if ([vir Alive]) {
-                            for (int j=0; j<vir.BurstSize; j++) {
-                                Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
-                                [newvir mutate:0.4];
-                                [newviruses addObject: newvir];
+                        if (coin_toss(Health / 100)) {
+                            // reproduce only if healthy enough
+
+                            Virus *vir = Viruses[i];
+                            
+                            if ([vir Alive]) {
+                                for (int j=0; j<vir.BurstSize; j++) {
+                                    Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
+                                    [newvir mutate:0.4];
+                                    [new_viruses addObject: newvir];
+                                }
                             }
                         }
                     }
                 }
+                
+                [Viruses addObjectsFromArray:new_viruses];
             }
             
-            [Viruses addObjectsFromArray:newviruses];
+            //[Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
+            
+            
             for (int i=0; i<[Viruses count]; i++) {
                 burden += [Viruses[i] Virulence];
                 burden = burden / 24.0; // account for burden per hour
@@ -165,10 +165,10 @@ static int nematode_state_table[14][2]  =
 //-(void) hatchTemp: (float) temperature Soy: (Soybean*) soy {
 -(void) hatch {
     // unhatched J2 emerge from cyst or eggsac
-    @autoreleasepool {
+    //@autoreleasepool {
         /// check containder flag
         
-        int temperature = [[Sim environment] temperature];
+        int temperature = [[Sim environment] Temperature];
         Soybean* soy = [Sim soybean];
         
         if (Health >0) {
@@ -176,9 +176,15 @@ static int nematode_state_table[14][2]  =
 
             if (temperature >= HATCH_MIN_TEMP && temperature <= HATCH_MAX_TEMP) {
                 prob_hatch = Health/100.0;
-                if ([soy Age] >= SOY_HATCH_MIN && [soy Age] <= SOY_HATCH_MAX) {
+                if ([soy GerminatedAge] >= SOY_HATCH_MIN && [soy GerminatedAge] <= SOY_HATCH_MAX) {
                     // proxy for root exudate
                     prob_hatch *= [soy getHospitability];
+                    if ([inContainer State]==EGGSAC) prob_hatch *=0.2;
+                    else prob_hatch *= 0.01; // must be in a cyst.
+                }
+                else {
+                    // soybean is not at the right point in time
+                    prob_hatch = 0;
                 }
             }
             if (coin_toss(prob_hatch)) {
@@ -190,7 +196,7 @@ static int nematode_state_table[14][2]  =
         else {
             State = DEAD;
         }
-    }
+    //}
 }
 
 -(void) burrow {
@@ -249,12 +255,12 @@ static int nematode_state_table[14][2]  =
 
 -(void) impregnateFemale: (Nematode*) fem {
     //  boy finds girls, and transmits an STD
-    @autoreleasepool {
 
-        if (coin_toss([fem Health]/100.0)) {
-            int fnumzygotes = MAX(random_integer(300,500), [fem NumZygotes]);
-            [fem setNumZygotes:fnumzygotes];
-        }
+    if (coin_toss([fem Health]/100.0)) {
+        int fnumzygotes = MAX(random_integer(300,500), [fem NumZygotes]);
+        [fem setNumZygotes:fnumzygotes];
+    }
+    @autoreleasepool {
         NSMutableArray *transmitted = [[NSMutableArray alloc] init];
         for (int i=0; i<[Viruses count]; i++) {
             @autoreleasepool {
@@ -267,6 +273,7 @@ static int nematode_state_table[14][2]  =
         }
         [fem addViruses:transmitted]; // this is an array..
         [fem setState: MATING];
+        if (![[Sim nematodes] containsObject:fem]) {NSLog(@"Not in nematodes\n");}
     }
 }
 
@@ -283,43 +290,46 @@ static int nematode_state_table[14][2]  =
 
 -(void) produceEggSac {
     // F_prime goes to eggsac - produces embryos.
-    if (coin_toss(Health/100.0)) {
-        State = EGGSAC;
-        Age = 0;
-        Health = 100;
-        // We reset health to 100 here.
-        
-        // create new nematodes from numZygotes -
-        // init them in embryo state,
-        // transfer viruses from EGGSAC to EMBRYOs
-        NSMutableArray *new_nematodes = [[NSMutableArray alloc] initWithCapacity:NumZygotes];
-        for (int i=0; i<NumZygotes; i++) {
-            @autoreleasepool {
-                
-                Nematode *baby = [[Nematode alloc] initAsEmbryoInSim:Sim inContainer:self];
-                [baby setInContainer:self];
-                
-                if ([Viruses count] > 0) {
-                    float vir_per_egg = [Viruses count]/(float)(NumZygotes);
+    @autoreleasepool {
+        if (coin_toss(Health/100.0)) {
+            State = EGGSAC;
+            Age = 0;
+            Health = 100;
+            // We reset health to 100 here.
+            
+            // create new nematodes from numZygotes -
+            // init them in embryo state,
+            // transfer viruses from EGGSAC to EMBRYOs
+            NSMutableArray *new_nematodes = [[NSMutableArray alloc] initWithCapacity:NumZygotes];
+            while (NumZygotes) {
+                @autoreleasepool {
                     
-                    while (vir_per_egg >1) {
-                        [self moveSingleVirusToHost:baby];
-                        vir_per_egg -= 1;
-                    }
-                    float vir_xmit_prob = MIN(1,vir_per_egg);
+                    Nematode *baby = [[Nematode alloc] initAsEmbryoInSim:Sim inContainer:self];
+                    [baby setInContainer:self];
                     
-                    if (coin_toss(vir_xmit_prob)) {
-                        [self moveSingleVirusToHost:baby];
+                    if ([Viruses count] > 0) {
+                        float vir_per_egg = [Viruses count]/(float)(NumZygotes);
+                        
+                        while (vir_per_egg >1) {
+                            [self moveSingleVirusToHost:baby];
+                            vir_per_egg -= 1;
+                        }
+                        float vir_xmit_prob = MIN(1,vir_per_egg);
+                        
+                        if (coin_toss(vir_xmit_prob)) {
+                            [self moveSingleVirusToHost:baby];
+                        }
                     }
+                    // we get a probability of
+                    [new_nematodes addObject:baby];
+                    NumZygotes--;
                 }
-                // we get a probability of
-                [new_nematodes addObject:baby];
-                NumZygotes--;
             }
+            
+            [Sim installNewNematodes: new_nematodes];
+            
         }
-        
-        [Sim installNewNematodes: new_nematodes];
-        
+
     }
 }
 
@@ -348,13 +358,21 @@ static int nematode_state_table[14][2]  =
             break;
         case F: [self feed];
             break;
-        case F_PRIME: [self feed];
-            [self produceEggSac];
         case MATING: [self feed];
             State = F_PRIME;
             break;
+        case F_PRIME: [self feed];
+            [self produceEggSac];
+        case EGGSAC:
+            break;
+        case CYST:
+            break;
+        default:
+            break;
+
     }
 }
+
 
 -(void) decrement_health {
     int min_time = nematode_state_table[State][0];
@@ -376,7 +394,7 @@ static int nematode_state_table[14][2]  =
 }
 
 -(void) addViruses: (NSArray*) viruses {
-    [Viruses addObject:viruses];
+    [Viruses addObjectsFromArray:viruses];
 }
 
 -(void) findMate {

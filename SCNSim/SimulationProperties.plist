@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Simulation settings</key>
+	<dict>
+		<key>Replicates</key>
+		<integer>1</integer>
+		<key>Alternate year crop</key>
+		<false/>
+		<key>Break if no viruses</key>
+		<true/>
+		<key>Break if no nematodes</key>
+		<true/>
+		<key>Number of cysts</key>
+		<array>
+			<integer>10</integer>
+		</array>
+		<key>Max ticks</key>
+		<real>87</real>
+		<key>Report interval</key>
+		<integer>24</integer>
+		<key>Experiment identifier</key>
+		<string>test</string>
+	</dict>
+	<key>Virus settings</key>
+	<dict>
+		<key>Viral loads</key>
+		<array>
+			<integer>10</integer>
+		</array>
+		<key>Infection rate</key>
+		<array>
+			<real>0.1</real>
+		</array>
+		<key>Mutation rate</key>
+		<real>0.4</real>
+		<key>Burst size</key>
+		<array>
+			<string>5</string>
+		</array>
+		<key>Transmissibility</key>
+		<array>
+			<real>0.5</real>
+		</array>
+		<key>Virulence</key>
+		<array>
+			<real>0.2</real>
+		</array>
+	</dict>
+</dict>
+</plist>

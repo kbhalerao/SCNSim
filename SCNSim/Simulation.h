@@ -35,5 +35,6 @@
             withBurstSize: (int) BurstSize;
 -(int) run;
 -(void) convertEggSacsToCysts;
+-(void) dealloc;
 
 @end
