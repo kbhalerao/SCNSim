@@ -253,11 +253,11 @@
             NSLog(@"All viruses dead");
             [self cleanup];
         }
-        /*
+        
         if (![nematodes count]) {
             NSLog(@"All nematodes dead");
             [self cleanup];
-        }*/
+        }
         // eject if the viruses or nematodes are all dead
     }
 }
