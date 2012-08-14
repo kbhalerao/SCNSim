@@ -117,7 +117,7 @@
 
 -(void) convertEggSacsToCysts {
     
-    if([environment Temperature] <68) {
+    if([environment Temperature] < HATCH_MIN_TEMP) {
         @autoreleasepool {
             NSArray *eggsacs = [nematodes filteredArrayUsingPredicate:
                                 [NSPredicate predicateWithFormat:@"State == %i", EGGSAC]];
@@ -186,10 +186,6 @@
         
         report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
         
-        if ([vir_acc count]==0) {
-            NSLog(@"Ping!");
-        }
-        
         NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
         report_dict[@"Transmissibility mean"] = trans_stats[0];
         report_dict[@"Transmissibility stdev"] = trans_stats[1];
@@ -229,8 +225,7 @@
         NSArray *allUnhatchedJ2s = [nematodes filteredArrayUsingPredicate:
                                     [NSPredicate predicateWithFormat:@"inContainer != nil"]];
     
-        report_dict[@"Eggs per container mean"] = @(((float)[eggsacs count] + (float)[cysts count]) \
-                                                                /[allUnhatchedJ2s count]);
+        report_dict[@"Eggs per container mean"] = @([allUnhatchedJ2s count]/((float)[eggsacs count] + (float)[cysts count]));
         
         
         if (simTicks==0) {
@@ -244,10 +239,17 @@
         NSArray *report_values = [report_dict objectsForKeys:columns notFoundMarker:@"None"];
         
         NSString *report_line = [NSString stringWithFormat:@"%@\n", [report_values componentsJoinedByString:@","]];
+        NSLog(@"%@",report_line);
         [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
         
-        if (![vir_acc count] && breakIfNoViruses) [self cleanup];
-        if (![nematodes count]) [self cleanup];
+        if (![vir_acc count] && breakIfNoViruses) {
+            NSLog(@"All viruses dead");
+            [self cleanup];
+        }
+        //if (![nematodes count]) {
+        //    NSLog(@"All nematodes dead");
+        //    [self cleanup];
+        //}
         // eject if the viruses or nematodes are all dead
     }
 }

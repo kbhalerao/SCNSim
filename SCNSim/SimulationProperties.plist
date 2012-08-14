@@ -43,7 +43,7 @@
 	<key>Soybean settings</key>
 	<dict>
 		<key>Alternate year crop</key>
-		<false/>
+		<true/>
 	</dict>
 	<key>Simulation settings</key>
 	<dict>
@@ -55,12 +55,12 @@
 		<true/>
 		<key>Number of cysts</key>
 		<array>
-			<integer>10</integer>
+			<integer>0</integer>
 		</array>
 		<key>Max ticks</key>
-		<real>87</real>
+		<integer>87600</integer>
 		<key>Report interval</key>
-		<integer>24</integer>
+		<integer>50</integer>
 		<key>Experiment identifier</key>
 		<string>test</string>
 	</dict>
@@ -72,13 +72,13 @@
 		</array>
 		<key>Infection rate</key>
 		<array>
-			<real>0.1</real>
+			<integer>0</integer>
 		</array>
 		<key>Mutation rate</key>
 		<real>0.4</real>
 		<key>Burst size</key>
 		<array>
-			<string>5</string>
+			<integer>5</integer>
 		</array>
 		<key>Transmissibility</key>
 		<array>

@@ -18,6 +18,7 @@
     int Age;
     float PlantSize;
     NSMutableArray* SoilTemp;
+    int grewLastYear;
 }
 @property (readonly) int GerminatedAge; // -1 if not germinated, Days since germination if germinated
 @property int AlternateYears;

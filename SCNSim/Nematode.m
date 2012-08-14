@@ -180,7 +180,7 @@ static int nematode_state_table[14][2]  =
                     // proxy for root exudate
                     prob_hatch *= [soy getHospitability];
                     if ([inContainer State]==EGGSAC) prob_hatch *=0.2;
-                    else prob_hatch *= 0.01; // must be in a cyst.
+                    else prob_hatch *= 0.005; // must be in a cyst.
                 }
                 else {
                     // soybean is not at the right point in time

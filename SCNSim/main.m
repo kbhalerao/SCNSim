@@ -41,17 +41,19 @@ int main(int argc, const char * argv[])
         
         // extract values from the plist
         
-
-        NSString *fileid = [simDict[@"Experiment identifier"] stringValue];
         
-        [[NSFileManager defaultManager] createDirectoryAtPath:fileid
+        NSString *fileid = (simDict[@"Simulation settings"])[@"Experiment identifier"];
+        
+        [[NSFileManager defaultManager] createDirectoryAtPath:[NSString stringWithFormat: @"%@/%@", rootPath, fileid]
                                   withIntermediateDirectories:YES attributes:nil error:nil];
-        
-        [[NSFileManager defaultManager] createFileAtPath:[NSString stringWithFormat: @"%@.csv", fileid]
+
+            
+                
+        [[NSFileManager defaultManager] createFileAtPath:[NSString stringWithFormat: @"%@/%@.csv", rootPath, fileid]
                                                 contents:nil attributes:nil];
         
         __block NSFileHandle *agglog = [NSFileHandle fileHandleForWritingAtPath:
-                                        [NSString stringWithFormat: @"%@.csv", fileid]];
+                                        [NSString stringWithFormat: @"%@/%@.csv", rootPath, fileid]];
         
         if (agglog == nil) {
             NSLog(@"Failed to open aggregate log file\n");
@@ -63,13 +65,13 @@ int main(int argc, const char * argv[])
         [agglog writeData:[header dataUsingEncoding:NSUTF8StringEncoding]];
         
         
-        NSArray *numcysts = simDict[@"Number of cysts"];
-        NSArray *infectionrate = simDict[@"Infection rate"];
-        NSArray *virload = simDict[@"Viral loads"];
-        NSArray *virulence = simDict[@"Virulence"];
-        NSArray *transmissibility = simDict[@"Transmissibility"];
-        NSArray *burstsize = simDict[@"Burst size"];
-        int replicates = [[simDict objectForKey:@"Replicates"] intValue];
+        NSArray *numcysts = (simDict[@"Simulation settings"])[@"Number of cysts"];
+        NSArray *infectionrate = (simDict[@"Virus settings"])[@"Infection rate"];
+        NSArray *virload = (simDict[@"Virus settings"])[@"Viral loads"];
+        NSArray *virulence = (simDict[@"Virus settings"])[@"Virulence"];
+        NSArray *transmissibility = (simDict[@"Virus settings"])[@"Transmissibility"];
+        NSArray *burstsize = (simDict[@"Virus settings"])[@"Burst size"];
+        int replicates = [(simDict[@"Simulation settings"])[@"Replicates"] intValue];
         
         dispatch_queue_t io_queue = dispatch_queue_create("edu.illinois.bhalerao.io", NULL);
         dispatch_queue_t async_queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
@@ -78,7 +80,9 @@ int main(int argc, const char * argv[])
         dispatch_semaphore_t jobSemaphore = dispatch_semaphore_create(cpuCount * 2);
         
         NSMutableDictionary *basedict = [[NSMutableDictionary alloc] init];
-        NSArray *localEnvironment = [NSArray arrayWithObjects:simDict[@"Max temperature"], simDict[@"Min temperature"], nil];
+        NSArray *localEnvironment = [NSArray arrayWithObjects:
+                                     (simDict[@"Environment settings"])[@"Max temperature"],
+                                     (simDict[@"Environment settings"])[@"Min temperature"], nil];
         
         
         for (NSNumber *item_nc in numcysts) {
@@ -110,10 +114,11 @@ int main(int argc, const char * argv[])
                                                 dispatch_group_async(group, async_queue, ^{
                                                     //[basedict self];
                                                     Simulation *mysim = [[Simulation alloc]
-                                                                         initForMaxTicks:[simDict[@"Max ticks"] intValue]
+                                                                         initForMaxTicks:[(simDict[@"Simulation settings"])[@"Max ticks"] intValue]
                                                                          withCysts:[dict[@"cysts"] intValue]];
                                                     
                                                     [[mysim environment] setLocalEnvironment:localEnvironment];
+                                                    [[mysim soybean] setAlternateYears:[(simDict[@"Soybean settings"])[@"Alternate year crop"] boolValue]];
                                                     [mysim setBreakIfNoViruses:[simDict[@"Break if no viruses"] boolValue]];
                                                     
                                                     [mysim infectCystsAtRate:[dict[@"infrate"] floatValue]
@@ -122,11 +127,11 @@ int main(int argc, const char * argv[])
                                                         withTransmissibility:[dict[@"transmissibility"] floatValue]
                                                                withBurstSize:[dict[@"burstsize"] intValue]];
                                                     
-                                                    [mysim setReportInterval:[simDict[@"Report interval"] intValue]];
+                                                    [mysim setReportInterval:[(simDict[@"Simulation settings"])[@"Report interval"] intValue]];
                                                     
                                                     NSUUID *unique = [NSUUID UUID];
-                                                    NSString *ufilename = [NSString stringWithFormat: @"%@/%@.csv",
-                                                                          fileid, [unique UUIDString]];
+                                                    NSString *ufilename = [NSString stringWithFormat: @"%@/%@/%@.csv",
+                                                                          rootPath, fileid, [unique UUIDString]];
                                                     
                                                     [mysim setLogFile:ufilename];
                                                     //NSLog(@"%@\n", filename);

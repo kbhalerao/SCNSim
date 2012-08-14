@@ -18,19 +18,28 @@
         SoilTemp = [[NSMutableArray alloc] init];
         GerminatedAge = -1;
         PlantSize = 0;
+        AlternateYears = NO;
+        grewLastYear = NO;
     }
     return self;
 }
 -(void) growIncrement: (int) increment temp: (float) temperature {
     Age += increment;
     Age = Age % 365;
-    int alt_year = 0;
     
-    if (AlternateYears) {
-        alt_year = ((int) Age/365) % 2;
+    int growThisYear = 1; // grow this year by default
+
+    if (AlternateYears && grewLastYear) {
+        // then don't grow this year
+        growThisYear = 0;
     }
     
-    if (!alt_year) {
+    if (!growThisYear && Age > HARVESTDATE+10) {
+        grewLastYear = NO;
+    }
+    
+    if (growThisYear) {
+        
    
         if (GerminatedAge == -1) {
             [SoilTemp addObject:@(temperature)];
@@ -61,6 +70,7 @@
         if (Age > HARVESTDATE && GerminatedAge != -1) {
             PlantSize = 0;
             GerminatedAge = -1;
+            grewLastYear = YES;
         }
     }
 }
