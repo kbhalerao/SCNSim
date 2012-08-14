@@ -22,6 +22,7 @@
 }
 @property (readonly) int GerminatedAge; // -1 if not germinated, Days since germination if germinated
 @property int AlternateYears;
+@property int growThisYear;
 
 -(Soybean*) init;
 -(void) growIncrement: (int) increment temp: (float) temperature;

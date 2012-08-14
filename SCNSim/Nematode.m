@@ -54,6 +54,7 @@ static int nematode_state_table[14][2]  =
 @synthesize NumZygotes;
 @synthesize Sim;
 @synthesize inContainer;
+@synthesize numContained;
 
 
 -(Nematode *) initWithSim: (Simulation *) sim {
@@ -66,12 +67,13 @@ static int nematode_state_table[14][2]  =
             NumZygotes = 0;
             Sim = sim;
             inContainer = nil; // not in any container
+            numContained = 0;
         }
         return self;
     }
 }
 
--(Nematode*) initAsEmbryoInSim: (Simulation*) sim inContainer: (Nematode *) mommy {
+-(Nematode*) initAsEmbryoInSim: (Simulation*) sim {
     @autoreleasepool {
         Nematode *nem = [self initWithSim:sim];
         [nem setInContainer:self];
@@ -81,6 +83,7 @@ static int nematode_state_table[14][2]  =
 }
 
 -(void) dealloc {
+    //free(nematode_state_table);
     Viruses = nil;
     Sim = nil;
     inContainer = nil;
@@ -118,9 +121,11 @@ static int nematode_state_table[14][2]  =
                             
                             if ([vir Alive]) {
                                 for (int j=0; j<vir.BurstSize; j++) {
-                                    Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
-                                    [newvir mutate:0.4];
-                                    [new_viruses addObject: newvir];
+                                    @autoreleasepool {
+                                        Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
+                                        [newvir mutate:0.4];
+                                        [new_viruses addObject: newvir];
+                                    }
                                 }
                             }
                         }
@@ -169,18 +174,22 @@ static int nematode_state_table[14][2]  =
         /// check containder flag
         
         int temperature = [[Sim environment] Temperature];
-        Soybean* soy = [Sim soybean];
+        float soyhost = [[Sim soybean] getHospitability];
+        int gage = [[Sim soybean] GerminatedAge];
         
         if (Health >0) {
             float prob_hatch = 0;
 
             if (temperature >= HATCH_MIN_TEMP && temperature <= HATCH_MAX_TEMP) {
                 prob_hatch = Health/100.0;
-                if ([soy GerminatedAge] >= SOY_HATCH_MIN && [soy GerminatedAge] <= SOY_HATCH_MAX) {
+                if (gage >= SOY_HATCH_MIN && gage <= SOY_HATCH_MAX) {
                     // proxy for root exudate
-                    prob_hatch *= [soy getHospitability];
+                    prob_hatch *= soyhost;
                     if ([inContainer State]==EGGSAC) prob_hatch *=0.2;
-                    else prob_hatch *= 0.005; // must be in a cyst.
+                    else if ([inContainer State]==CYST) prob_hatch *= 0.005; // must be in a cyst.
+                    else {
+                        NSLog(@"Unhatched J2 not in any container\n");
+                    }
                 }
                 else {
                     // soybean is not at the right point in time
@@ -189,6 +198,12 @@ static int nematode_state_table[14][2]  =
             }
             if (coin_toss(prob_hatch)) {
                 State = J2;
+                [inContainer setNumContained:([inContainer numContained]-1)];
+
+                if ([inContainer numContained] <=0 ) {
+                    [inContainer setState:DEAD];
+                }
+                
                 inContainer = nil;
                 Age = 0;
             }
@@ -304,7 +319,7 @@ static int nematode_state_table[14][2]  =
             while (NumZygotes) {
                 @autoreleasepool {
                     
-                    Nematode *baby = [[Nematode alloc] initAsEmbryoInSim:Sim inContainer:self];
+                    Nematode *baby = [[Nematode alloc] initAsEmbryoInSim:Sim];
                     [baby setInContainer:self];
                     
                     if ([Viruses count] > 0) {
@@ -323,6 +338,7 @@ static int nematode_state_table[14][2]  =
                     // we get a probability of
                     [new_nematodes addObject:baby];
                     NumZygotes--;
+                    numContained++;
                 }
             }
             
@@ -375,26 +391,30 @@ static int nematode_state_table[14][2]  =
 
 
 -(void) decrement_health {
-    int min_time = nematode_state_table[State][0];
-    int max_time = nematode_state_table[State][1];
-    float health_per_day = 100.0/(max_time-min_time+1); 
-    
-    if (Age >= min_time) {
-        Health = MAX(Health - health_per_day, 0);
+    @autoreleasepool {
+        int min_time = nematode_state_table[State][0];
+        int max_time = nematode_state_table[State][1];
+        float health_per_day = 100.0/(max_time-min_time+1);
+        
+        if (Age >= min_time) {
+            Health = MAX(Health - health_per_day, 0);
         }
-    if (Health <= 0) {
-        State = DEAD;
-    }
-    if (inContainer != nil) {
-        if ([inContainer State] == DEAD) {
+        if (Health <= 0) {
             State = DEAD;
-            // I die if my container dies.
+        }
+        if (inContainer != nil) {
+            if ([inContainer State] == DEAD) {
+                State = DEAD;
+                // I die if my container dies.
+            }
         }
     }
 }
 
 -(void) addViruses: (NSArray*) viruses {
-    [Viruses addObjectsFromArray:viruses];
+    @autoreleasepool {
+        [Viruses addObjectsFromArray:viruses];
+    }
 }
 
 -(void) findMate {

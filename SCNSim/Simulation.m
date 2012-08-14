@@ -53,6 +53,7 @@
             [nematodes addObject:cyst];
             
             int numUnhatchedJ2 = random_integer(300,500);
+            [cyst setNumContained:numUnhatchedJ2];
             for (int i=0; i<numUnhatchedJ2; i++) {
                 Nematode *j2u = [[Nematode alloc] initWithSim:self];
                 [j2u setInContainer: cyst];
@@ -141,16 +142,22 @@
 
 -(int) run {
     while (simTicks < maxTicks && !Done) {
-        for (int i=0; i<[nematodes count]; i++) {
-            [nematodes[i] reproduceViruses];
-        }
-        if (simTicks % reportInterval==0) [self report];
-        if (simTicks % 24==0) {
-            [environment increment_age:24];
-            [soybean growIncrement:1 temp:[environment Temperature]];
-            [self removeDeadNematodes];
-            for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
-            [self convertEggSacsToCysts];
+        @autoreleasepool {
+            for (int i=0; i<[nematodes count]; i++) {
+                @autoreleasepool {
+                    [nematodes[i] reproduceViruses];
+                }
+            }
+            @autoreleasepool {
+                if (simTicks % reportInterval==0) [self report];
+            }
+            if (simTicks % 24==0) {
+                [environment increment_age:24];
+                [soybean growIncrement:1 temp:[environment Temperature]];
+                [self removeDeadNematodes];
+                for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
+                [self convertEggSacsToCysts];
+            }
         }
         simTicks ++;
         //NSLog(@"%d", simTicks);
@@ -246,10 +253,11 @@
             NSLog(@"All viruses dead");
             [self cleanup];
         }
-        //if (![nematodes count]) {
-        //    NSLog(@"All nematodes dead");
-        //    [self cleanup];
-        //}
+        /*
+        if (![nematodes count]) {
+            NSLog(@"All nematodes dead");
+            [self cleanup];
+        }*/
         // eject if the viruses or nematodes are all dead
     }
 }
@@ -262,7 +270,7 @@
 // code adapted from StackOverflow
 
 -(NSNumber*) meanOf:(NSArray *)array {
-    //@autoreleasepool {
+    @autoreleasepool {
         
         float runningTotal = 0.0;
             
@@ -275,7 +283,7 @@
             }
         
         return @(runningTotal / [array count]);
-    //}
+    }
 }
 
 -(NSArray*) meanAndStandardDeviationOf:(NSArray*) array {

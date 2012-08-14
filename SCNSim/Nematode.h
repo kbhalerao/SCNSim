@@ -49,6 +49,7 @@
 @property int NumZygotes;
 @property (weak) Simulation* Sim;
 @property (weak) Nematode * inContainer; // container =0 for eggsac, 1 for cyst.
+@property int numContained;
 
 -(Nematode *) initWithSim: (Simulation *) sim;
 -(void) incrementAge: (int) increment;

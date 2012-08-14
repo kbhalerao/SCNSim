@@ -11,32 +11,45 @@
 @implementation Soybean
 @synthesize GerminatedAge;
 @synthesize AlternateYears;
+@synthesize growThisYear;
 
 -(Soybean*) init {
-    if (self = [super init]) {
-        Age = 0;
-        SoilTemp = [[NSMutableArray alloc] init];
-        GerminatedAge = -1;
-        PlantSize = 0;
-        AlternateYears = NO;
-        grewLastYear = NO;
+    @autoreleasepool {
+        if (self = [super init]) {
+            Age = 0;
+            SoilTemp = [[NSMutableArray alloc] init];
+            GerminatedAge = -1;
+            PlantSize = 0;
+            AlternateYears = NO;
+            grewLastYear = NO;
+            growThisYear = YES;
+        }
+        return self;
     }
-    return self;
 }
 -(void) growIncrement: (int) increment temp: (float) temperature {
     Age += increment;
     Age = Age % 365;
-    
-    int growThisYear = 1; // grow this year by default
 
-    if (AlternateYears && grewLastYear) {
+    if (AlternateYears && !grewLastYear && Age < 10) {
         // then don't grow this year
-        growThisYear = 0;
+        growThisYear = YES;
     }
     
-    if (!growThisYear && Age > HARVESTDATE+10) {
+    if (AlternateYears && growThisYear && Age > 360) {
+        grewLastYear = YES;
+    }
+    
+    if (AlternateYears && !growThisYear && Age > 360) {
         grewLastYear = NO;
     }
+    
+    if (AlternateYears && grewLastYear && Age < 10) {
+        // then don't grow this year
+        growThisYear = NO;
+    }
+    
+    if (!AlternateYears) growThisYear = YES;
     
     if (growThisYear) {
         
@@ -47,8 +60,10 @@
                 [SoilTemp removeObjectAtIndex:0];
                 float avgTemp = 0;
                 for (int i=0; i<[SoilTemp count];  i++) {
-                    avgTemp += [(NSNumber*)SoilTemp[i] floatValue];
-                    //seriously dude? all this to add a float?
+                    @autoreleasepool {
+                        avgTemp += [(NSNumber*)SoilTemp[i] floatValue];
+                        //seriously dude? all this to add a float?
+                    }
                 }
                 avgTemp = avgTemp / [SoilTemp count];
                 if (avgTemp >= GERMINATETEMP) {

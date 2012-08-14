@@ -18,30 +18,31 @@
 
 -(id) init {
     // Returns object with age initialized to zero
-    if (self = [super init]) {
-        Age = 0;
-        localEnvironment = nil;
+    @autoreleasepool {
+        if (self = [super init]) {
+            Age = 0;
+            localEnvironment = nil;
+        }
+        return self;
     }
-    return self;
 }
 
 -(void) increment_age:(int)increment {
     // Increase age by given increment
     Age += increment;
-    @autoreleasepool {
         
-        int days = Age / 24;
-        
-        int month = ((days % 365) / 30.4);
-        // Avg days in a month = 365/12 = 30.4
-        
-        // temperature ranges for Champaign county, IL
-        
-        int max_temp = [localEnvironment[0][month] intValue];
-        int min_temp = [localEnvironment[1][month] intValue];
-        
-        Temperature = 0.5*random_integer(min_temp, max_temp) + 0.5*Temperature;
-    }
+    int days = Age / 24;
+    
+    int month = ((days % 365) / 30.4);
+    // Avg days in a month = 365/12 = 30.4
+    
+    // temperature ranges for Champaign county, IL
+    
+    int max_temp = [localEnvironment[0][month] intValue];
+    int min_temp = [localEnvironment[1][month] intValue];
+    
+    Temperature = 0.5*random_integer(min_temp, max_temp) + 0.5*Temperature;
+    
 }
 
 @end

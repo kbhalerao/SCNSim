@@ -58,7 +58,7 @@
 			<integer>0</integer>
 		</array>
 		<key>Max ticks</key>
-		<integer>87600</integer>
+		<real>87</real>
 		<key>Report interval</key>
 		<integer>50</integer>
 		<key>Experiment identifier</key>

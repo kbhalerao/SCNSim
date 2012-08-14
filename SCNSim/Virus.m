@@ -20,13 +20,15 @@
            Transmissibility:(float)transmissibility
                   BurstSize:(int)burstSize {
     
-    if (self = [super init]) {
-        BurstSize = burstSize;
-        Transmissibility = transmissibility;
-        Virulence = virulence;
-        Alive = TRUE;
+    @autoreleasepool {
+        if (self = [super init]) {
+            BurstSize = burstSize;
+            Transmissibility = transmissibility;
+            Virulence = virulence;
+            Alive = TRUE;
+        }
+        return self;
     }
-    return self;
 }
 
 -(void) mutate:(float)probability {
