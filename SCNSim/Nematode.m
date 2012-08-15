@@ -186,7 +186,7 @@ static int nematode_state_table[14][2]  =
                     // proxy for root exudate
                     prob_hatch *= soyhost;
                     if ([inContainer State]==EGGSAC) prob_hatch *=0.2;
-                    else if ([inContainer State]==CYST) prob_hatch *= 0.005; // must be in a cyst.
+                    else if ([inContainer State]==CYST) prob_hatch *= 0.002; // must be in a cyst.
                     else {
                         NSLog(@"Unhatched J2 not in any container\n");
                     }

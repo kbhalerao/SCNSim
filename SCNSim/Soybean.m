@@ -96,7 +96,7 @@
     return food;
 }
 -(float) getHospitability {
-    return MIN(5*PlantSize / SOYMAXSIZE, 1);
+    return MIN(3*PlantSize / SOYMAXSIZE, 1);
 }
 -(int) Age {
     return Age;
