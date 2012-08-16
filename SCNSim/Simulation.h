@@ -24,6 +24,9 @@
 @property (readonly) int simTicks;
 @property int reportInterval;
 @property int breakIfNoViruses;
+@property int numMales;
+@property NSMutableArray *potentialMates;
+@property NSMutableArray *deadNematodes;
 
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
 -(void) installNewNematodes: (NSMutableArray*) new_nematodes;

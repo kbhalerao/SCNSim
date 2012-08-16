@@ -27,6 +27,9 @@
             Done = FALSE;
             [self populateCysts: cysts];
             breakIfNoViruses = FALSE;
+            numMales = 0;
+            potentialMates = [[NSMutableArray alloc] init];
+            deadNematodes = [[NSMutableArray alloc] init];
         }
         return self;
     }
@@ -38,12 +41,16 @@
 @synthesize simTicks;
 @synthesize reportInterval;
 @synthesize breakIfNoViruses;
+@synthesize numMales;
+@synthesize potentialMates;
+@synthesize deadNematodes;
 
 -(void) dealloc {
     environment = nil;
     soybean = nil;
     nematodes = nil;
     report_dict = nil;
+    potentialMates = nil;
 }
 
 -(void) populateCysts: (int) cysts {
@@ -102,18 +109,10 @@
 }
 
 -(void) removeDeadNematodes {
-    
     @autoreleasepool {
-        NSArray *deadNematodes = [nematodes filteredArrayUsingPredicate:
-                                  [NSPredicate predicateWithFormat:@"State == %i", DEAD]];
-        for (Nematode *nem in deadNematodes) {
-            [nem setSim: nil];
-            [nem setViruses:nil];
-            [nem setInContainer:nil];
-        }
+        [nematodes removeObjectsInArray:deadNematodes];
+        [deadNematodes removeAllObjects];
     }
-    [nematodes filterUsingPredicate:[NSPredicate predicateWithFormat:@"State != %i", DEAD]];
-
 }
 
 -(void) convertEggSacsToCysts {
@@ -153,8 +152,8 @@
             }
             if (simTicks % 24==0) {
                 [environment increment_age:24];
-                [soybean growIncrement:1 temp:[environment Temperature]];
                 [self removeDeadNematodes];
+                [soybean growIncrement:1 temp:[environment Temperature]];
                 for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
                 [self convertEggSacsToCysts];
             }
@@ -223,6 +222,11 @@
         for (int i=0; i<[stateNames count]; i++) {
             report_dict[stateNames[i] ] = stateCounts[i];
         }
+        
+        // here's an update of the potential males 
+        numMales = [stateCounts[M] intValue]; // for use in hatching function
+        
+        
         
         NSArray *eggsacs = [nematodes filteredArrayUsingPredicate:
                          [NSPredicate predicateWithFormat:@"State == %i", EGGSAC]];

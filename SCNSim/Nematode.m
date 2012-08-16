@@ -146,6 +146,7 @@ static int nematode_state_table[14][2]  =
         
         if (burden > Health) {
             State = DEAD;
+            [[Sim deadNematodes] addObject: self];
         }
         else Health = MAX(Health-burden, 0);
     }
@@ -202,6 +203,13 @@ static int nematode_state_table[14][2]  =
 
                 if ([inContainer numContained] <=0 ) {
                     [inContainer setState:DEAD];
+                    [[Sim deadNematodes] addObject: inContainer];
+                    for (Nematode *nem in [Sim nematodes]) {
+                        if ([nem inContainer] == self) {
+                            [nem setState:DEAD];
+                            [[Sim deadNematodes] addObject:nem];
+                        }
+                    }
                 }
                 
                 inContainer = nil;
@@ -210,6 +218,7 @@ static int nematode_state_table[14][2]  =
         }
         else {
             State = DEAD;
+            [[Sim deadNematodes] addObject: self];
         }
     //}
 }
@@ -264,6 +273,9 @@ static int nematode_state_table[14][2]  =
         if (Age >= min_age && Age <= max_age && coin_toss(Health/100.0)) {
             Age = 0;
             State = nextState;
+            if (State == F) {
+                [[Sim potentialMates] addObject:self];
+            }
         }
     }
 }
@@ -288,6 +300,7 @@ static int nematode_state_table[14][2]  =
         }
         [fem addViruses:transmitted]; // this is an array..
         [fem setState: MATING];
+        [[Sim potentialMates] removeObject:fem];
         if (![[Sim nematodes] containsObject:fem]) {NSLog(@"Not in nematodes\n");}
     }
 }
@@ -308,6 +321,7 @@ static int nematode_state_table[14][2]  =
     @autoreleasepool {
         if (coin_toss(Health/100.0)) {
             State = EGGSAC;
+            [[Sim potentialMates] removeObject:self];
             Age = 0;
             Health = 100;
             // We reset health to 100 here.
@@ -376,6 +390,7 @@ static int nematode_state_table[14][2]  =
             break;
         case MATING: [self feed];
             State = F_PRIME;
+            [[Sim potentialMates] addObject:self];
             break;
         case F_PRIME: [self feed];
             [self produceEggSac];
@@ -401,11 +416,13 @@ static int nematode_state_table[14][2]  =
         }
         if (Health <= 0) {
             State = DEAD;
+            [[Sim deadNematodes] addObject: self];
         }
         if (inContainer != nil) {
             if ([inContainer State] == DEAD) {
                 State = DEAD;
                 // I die if my container dies.
+                [[Sim deadNematodes] addObject: self];
             }
         }
     }
@@ -421,21 +438,16 @@ static int nematode_state_table[14][2]  =
     
     if (coin_toss(Health/100)) {
         @autoreleasepool {
-            int male_count = 0;
-            for (int i=0; i<[[Sim nematodes] count]; i++) {
-                if ([[Sim nematodes][i] State] == M) male_count++;
-            }
-            if (male_count >10) {
-                NSMutableArray *potential_mates = [[NSMutableArray alloc] init];
-                for (Nematode *nem in [Sim nematodes]) {
-                    if ([nem State] == F || [nem State] == F_PRIME) {
-                        [potential_mates addObject: nem];
-                    }
-                }
-                if ([potential_mates count] > 10) {
-                    Nematode *mate = potential_mates[random_integer(0, (int)[potential_mates count]-1)];
+
+            if ([Sim numMales]>10) {                
+                
+                if ([[Sim potentialMates] count] > 10) {
+                    Nematode *mate = [Sim potentialMates][random_integer(0, (int)[[Sim potentialMates] count]-1)];
                     [self impregnateFemale:mate];
-                    if (!coin_toss(Health)) State = DEAD;
+                    if (!coin_toss(Health)) {
+                        State = DEAD;
+                        [[Sim deadNematodes] addObject:self];
+                    }
                     
                 }
             }
