@@ -117,7 +117,7 @@
 
 -(void) convertEggSacsToCysts {
     
-    if([environment Temperature] < HATCH_MIN_TEMP) {
+    if([environment Temperature] < 68) {
         @autoreleasepool {
             NSArray *eggsacs = [nematodes filteredArrayUsingPredicate:
                                 [NSPredicate predicateWithFormat:@"State == %i", EGGSAC]];
@@ -178,31 +178,42 @@
         report_dict[@"Soybean"] = @([soybean PlantSize]);
         report_dict[@"Nematodes"] = @([nematodes count]);
         
-        NSArray *stats_health = [self meanAndStandardDeviationOf:[nematodes valueForKey:@"Health"]];
-        report_dict[@"Health mean"] = stats_health[0];
-        report_dict[@"Health stdev"] = stats_health[1];
-        if ([stats_health[0] floatValue] > 100) NSLog(@"Ping!\n"); // Yikes!
-        
-        NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
-        NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
-        for (int i=0; i<[vir_arrays count]; i++) {
-            NSArray *temp = vir_arrays[i];
-            if ([temp count]>0) [vir_acc addObjectsFromArray:vir_arrays[i]];
+        @autoreleasepool {
+            NSArray *stats_health = [self meanAndStandardDeviationOf:[nematodes valueForKey:@"Health"]];
+            report_dict[@"Health mean"] = stats_health[0];
+            report_dict[@"Health stdev"] = stats_health[1];
+            if ([stats_health[0] floatValue] > 100) NSLog(@"Ping!\n"); // Yikes!
         }
         
-        report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
+        @autoreleasepool {
+            NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
+            NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
+            for (int i=0; i<[vir_arrays count]; i++) {
+                NSArray *temp = vir_arrays[i];
+                if ([temp count]>0) [vir_acc addObjectsFromArray:vir_arrays[i]];
+            }
+            
+            report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
+            
+            NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
+            report_dict[@"Transmissibility mean"] = trans_stats[0];
+            report_dict[@"Transmissibility stdev"] = trans_stats[1];
+            
+            NSArray *vir_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Virulence"]];
+            report_dict[@"Virulence mean"] = vir_stats[0];
+            report_dict[@"Virulence stdev"] = vir_stats[1];
+            
+            NSArray *burst_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"BurstSize"]];
+            report_dict[@"BurstSize mean"] = burst_stats[0];
+            report_dict[@"BurstSize stdev"] = burst_stats[1];
+            
+            if (![vir_acc count] && breakIfNoViruses) {
+                NSLog(@"All viruses dead");
+                [self cleanup];
+            }
+
+        }
         
-        NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
-        report_dict[@"Transmissibility mean"] = trans_stats[0];
-        report_dict[@"Transmissibility stdev"] = trans_stats[1];
-        
-        NSArray *vir_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Virulence"]];
-        report_dict[@"Virulence mean"] = vir_stats[0];
-        report_dict[@"Virulence stdev"] = vir_stats[1];
-        
-        NSArray *burst_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"BurstSize"]];
-        report_dict[@"BurstSize mean"] = burst_stats[0];
-        report_dict[@"BurstSize stdev"] = burst_stats[1];
         
         NSArray *stateNames = @[@"Embryo", @"J1", @"UnhatchedJ2", @"J2", @"J3", \
                                @"J4M", @"J4F", @"M", @"F", @"Mating", @"F_Prime", @"EggSac", @"Cyst", @"Dead"];
@@ -233,10 +244,26 @@
         NSArray *cysts = [nematodes filteredArrayUsingPredicate:
                           [NSPredicate predicateWithFormat:@"State == %i", CYST]];
         
-        NSArray *allUnhatchedJ2s = [nematodes filteredArrayUsingPredicate:
-                                    [NSPredicate predicateWithFormat:@"inContainer != nil"]];
-    
-        report_dict[@"Eggs per container mean"] = @([allUnhatchedJ2s count]/((float)[eggsacs count] + (float)[cysts count]));
+        int unhatcheds = [stateCounts[EMBRYO] intValue] + [stateCounts[J1] intValue] + [stateCounts[UNHATCHEDJ2] intValue];
+        report_dict[@"Eggs per container mean"] = @(unhatcheds/((float)[eggsacs count] + (float)[cysts count]));
+        
+        
+        int numEggsInCysts = 0;
+        if ([cysts count]) {
+            for (Nematode *nem in cysts) {
+                numEggsInCysts += [nem numContained];
+            }
+        }
+        report_dict[@"Eggs per cyst"] = @(numEggsInCysts / (float)[cysts count]);
+        
+        
+        int numEggsInSacs = 0;
+        if ([eggsacs count]) {
+            for (Nematode *nem in eggsacs) {
+                numEggsInSacs += [nem numContained];
+            }
+        }
+        report_dict[@"Eggs per sac"] = @(numEggsInSacs / (float)[eggsacs count]);
         
         
         if (simTicks==0) {
@@ -253,10 +280,7 @@
         NSLog(@"%@",report_line);
         [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
         
-        if (![vir_acc count] && breakIfNoViruses) {
-            NSLog(@"All viruses dead");
-            [self cleanup];
-        }
+
         
         if (![nematodes count]) {
             NSLog(@"All nematodes dead");

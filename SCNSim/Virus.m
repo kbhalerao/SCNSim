@@ -42,7 +42,7 @@
         BurstSize += random_integer(-3, 3);
     }
     if (Transmissibility > 1) Transmissibility = 1;
-    if (Virulence > 1) Virulence = 1;
+    //if (Virulence > 1) Virulence = 1;
     if (Transmissibility <= 0) Alive=FALSE;
     if (Virulence <= 0) Alive=FALSE;
     if (BurstSize <= 0) Alive=FALSE;

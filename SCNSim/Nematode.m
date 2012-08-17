@@ -147,6 +147,9 @@ static int nematode_state_table[14][2]  =
         if (burden > Health) {
             State = DEAD;
             [[Sim deadNematodes] addObject: self];
+            if (inContainer != nil) {
+                [inContainer setNumContained:[inContainer numContained]-1];
+            }
         }
         else Health = MAX(Health-burden, 0);
     }
@@ -154,17 +157,23 @@ static int nematode_state_table[14][2]  =
 
 -(void) developIntoJ1 {
     // embryo develops into a J1 nematode
-    if (!coin_toss((float)Health/100)) {
+    if (coin_toss((float)Health/100)) {
         State = J1;
         Age = 0;
+        if ([self inContainer] == nil) {
+            NSLog(@"J1 not in container!");
+        }
     }
 }
 
 -(void) developIntoUnhatchedJ2 {
     // embryo develops into a J1 nematode
-    if (!coin_toss((float)Health/100)) {
+    if (coin_toss((float)Health/100)) {
         State = UNHATCHEDJ2;
         Age = 0;
+        if ([self inContainer] == nil) {
+            NSLog(@"UJ2 not in container!");
+        }
     }
 }
 
@@ -204,6 +213,7 @@ static int nematode_state_table[14][2]  =
                 if ([inContainer numContained] <=0 ) {
                     [inContainer setState:DEAD];
                     [[Sim deadNematodes] addObject: inContainer];
+                    [inContainer setNumContained:0];
                     for (Nematode *nem in [Sim nematodes]) {
                         if ([nem inContainer] == self) {
                             [nem setState:DEAD];
@@ -219,6 +229,9 @@ static int nematode_state_table[14][2]  =
         else {
             State = DEAD;
             [[Sim deadNematodes] addObject: self];
+            if (inContainer != nil) {
+                [inContainer setNumContained:[inContainer numContained]-1];
+            }
         }
     //}
 }
@@ -417,12 +430,16 @@ static int nematode_state_table[14][2]  =
         if (Health <= 0) {
             State = DEAD;
             [[Sim deadNematodes] addObject: self];
+            if (inContainer != nil) {
+                [inContainer setNumContained:[inContainer numContained]-1];
+            }
         }
         if (inContainer != nil) {
             if ([inContainer State] == DEAD) {
                 State = DEAD;
                 // I die if my container dies.
                 [[Sim deadNematodes] addObject: self];
+                [inContainer setNumContained:[inContainer numContained]-1];
             }
         }
     }
