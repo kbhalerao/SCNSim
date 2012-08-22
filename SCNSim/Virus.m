@@ -15,16 +15,19 @@
 @synthesize Transmissibility;
 @synthesize BurstSize;
 @synthesize Alive;
+@synthesize Durability;
 
 -(Virus*) initWithVirulence:(float)virulence
            Transmissibility:(float)transmissibility
-                  BurstSize:(int)burstSize {
+                  BurstSize:(int)burstSize
+                 Durability: (float) durability {
     
     @autoreleasepool {
         if (self = [super init]) {
             BurstSize = burstSize;
             Transmissibility = transmissibility;
             Virulence = virulence;
+            Durability = durability;
             Alive = TRUE;
         }
         return self;
@@ -40,12 +43,14 @@
         Transmissibility += random_gauss(0, 0.05);
         Virulence += random_gauss(0, 0.05);
         BurstSize += random_integer(-3, 3);
+        Durability += random_gauss(0, 0.05);
     }
     if (Transmissibility > 1) Transmissibility = 1;
-    //if (Virulence > 1) Virulence = 1;
+    if (Durability > 1) Durability = 1;
     if (Transmissibility <= 0) Alive=FALSE;
     if (Virulence <= 0) Alive=FALSE;
     if (BurstSize <= 0) Alive=FALSE;
+    if (Durability <= 0) Alive=FALSE;
 }
 
 @end

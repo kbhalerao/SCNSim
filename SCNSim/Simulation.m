@@ -57,6 +57,7 @@
     @autoreleasepool {
         for(int i=0; i<cysts; i++) {
             Nematode *cyst = [[Nematode alloc] initWithSim: self];
+            [cyst setHealth:random_float()*100];
             [nematodes addObject:cyst];
             
             int numUnhatchedJ2 = random_integer(300,500);
@@ -87,7 +88,7 @@
 
 -(void) infectCystsAtRate: (float) infectionRate          atLoads: (int) viralLoads
             withVirluence: (float) Virulence withTransmissibility: (float) Transmissibility
-            withBurstSize: (int) BurstSize {
+            withBurstSize: (int) BurstSize         withDurability:(float) Durability {
     @autoreleasepool {
         for (int i=0; i<[nematodes count]; i++) {
             if (coin_toss(infectionRate) && [nematodes[i] State] == UNHATCHEDJ2) {
@@ -96,7 +97,8 @@
                     @autoreleasepool {
                         Virus *virus = [[Virus alloc] initWithVirulence:Virulence
                                                        Transmissibility:Transmissibility
-                                                              BurstSize:BurstSize];
+                                                              BurstSize:BurstSize
+                                                             Durability:Durability];
                         [virus mutate:1];
                         [viruslist addObject:virus];
                     }
@@ -286,7 +288,6 @@
             NSLog(@"All nematodes dead");
             [self cleanup];
         }
-        // eject if the viruses or nematodes are all dead
     }
 }
 

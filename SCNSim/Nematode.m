@@ -119,10 +119,14 @@ static int nematode_state_table[14][2]  =
 
                             Virus *vir = Viruses[i];
                             
+                            if (coin_toss(vir.Durability)) {
+                                [vir setAlive:FALSE];
+                            }
+                            
                             if ([vir Alive]) {
                                 for (int j=0; j<vir.BurstSize; j++) {
                                     @autoreleasepool {
-                                        Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize];
+                                        Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize Durability:vir.Durability];
                                         [newvir mutate:0.4];
                                         [new_viruses addObject: newvir];
                                     }
@@ -171,6 +175,7 @@ static int nematode_state_table[14][2]  =
     if (coin_toss((float)Health/100)) {
         State = UNHATCHEDJ2;
         Age = 0;
+        Health = 100;
         if ([self inContainer] == nil) {
             NSLog(@"UJ2 not in container!");
         }

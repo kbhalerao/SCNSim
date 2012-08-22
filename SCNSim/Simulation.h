@@ -35,7 +35,8 @@
                   atLoads: (int) viralLoads
             withVirluence: (float) Virulence
      withTransmissibility: (float) Transmissibility
-            withBurstSize: (int) BurstSize;
+            withBurstSize: (int) BurstSize
+           withDurability: (float) Durability;
 -(int) run;
 -(void) convertEggSacsToCysts;
 -(void) dealloc;

@@ -16,8 +16,12 @@
 @property float Transmissibility;
 @property float Virulence;
 @property int Alive;
+@property float Durability;
 
--(Virus*) initWithVirulence:(float)Virulence Transmissibility:(float)Transmissibility BurstSize:(int)BurstSize;
+-(Virus*) initWithVirulence:(float)Virulence
+           Transmissibility:(float)Transmissibility
+                  BurstSize:(int)BurstSize
+                 Durability:(float)Durability;
 
 
 -(void) mutate: (float) probability;

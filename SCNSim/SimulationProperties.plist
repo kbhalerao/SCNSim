@@ -66,6 +66,10 @@
 	</dict>
 	<key>Virus settings</key>
 	<dict>
+		<key>Durability</key>
+		<array>
+			<real>0.2</real>
+		</array>
 		<key>Viral loads</key>
 		<array>
 			<integer>10</integer>
