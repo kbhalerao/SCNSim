@@ -119,7 +119,7 @@ static int nematode_state_table[14][2]  =
 
                             Virus *vir = Viruses[i];
                             
-                            if (coin_toss(vir.Durability)) {
+                            if (coin_toss(1-vir.Durability)) {
                                 [vir setAlive:FALSE];
                             }
                             
@@ -259,6 +259,7 @@ static int nematode_state_table[14][2]  =
             case J4F: feedrate = J4_FEED; break;
             case F: feedrate = F_FEED; break;
             case F_PRIME: feedrate = F_PRIME_FEED; break;
+            case MATING: feedrate = MATING_FEED; break;
             default: feedrate = 0; break;
         }
         

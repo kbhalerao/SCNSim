@@ -36,6 +36,7 @@
 #define J3_FEED 0.05
 #define J4_FEED 0.05
 #define F_FEED 0.05
+#define MATING_FEED 0.05
 #define F_PRIME_FEED 0.05
 #define INCUBATE_TEMP 61
 
