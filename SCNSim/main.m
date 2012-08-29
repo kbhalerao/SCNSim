@@ -60,7 +60,7 @@ int main(int argc, const char * argv[])
             exit(-1);
         }
         
-        NSString *header = @"Cysts, InfectionRate, ViralLoad, Virulence, Transmissibility, BurstSize, MaxTicks, Filename\n";
+        NSString *header = @"Cysts, InfectionRate, ViralLoad, Virulence, Transmissibility, BurstSize, Durability, MaxTicks, Filename\n";
         
         [agglog writeData:[header dataUsingEncoding:NSUTF8StringEncoding]];
         
@@ -78,7 +78,8 @@ int main(int argc, const char * argv[])
         dispatch_queue_t async_queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
         dispatch_group_t group = dispatch_group_create();
         //uint64_t cpuCount = [[NSProcessInfo processInfo] processorCount];
-        dispatch_semaphore_t jobSemaphore = dispatch_semaphore_create(2); // two threads max
+        dispatch_semaphore_t jobSemaphore = dispatch_semaphore_create(
+                                        [(simDict[@"Simulation settings"])[@"NumProcs"] intValue]); 
         
         NSMutableDictionary *basedict = [[NSMutableDictionary alloc] init];
         NSArray *localEnvironment = [NSArray arrayWithObjects:
@@ -145,13 +146,14 @@ int main(int argc, const char * argv[])
                                                         int runs = [mysim run];
                                                         //@"Cysts, InfectionRate, ViralLoad, Virulence, Transmisibility, BurstSize, MaxTicks, Filename\n"
                                                         if (runs) {
-                                                            NSString *iteration = [NSString stringWithFormat:@"%d,%.2f,%d,%.2f,%.2f,%d,%d,%@\n",
+                                                            NSString *iteration = [NSString stringWithFormat:@"%d,%.2f,%d,%.2f,%.2f,%d,%f,%d,%@\n",
                                                                                    [dict[@"cysts"] intValue],
                                                                                    [dict[@"infrate"] floatValue],
                                                                                    [dict[@"virload"] intValue],
                                                                                    [dict[@"virulence"] floatValue],
                                                                                    [dict[@"transmissibility"] floatValue],
                                                                                    [dict[@"burstsize"] intValue],
+                                                                                   [dict[@"durability"] floatValue],
                                                                                    runs,
                                                                                    [unique UUIDString]];
                                                             

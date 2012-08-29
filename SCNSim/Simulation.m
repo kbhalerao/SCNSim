@@ -188,14 +188,20 @@
         }
         
         @autoreleasepool {
+            int nem_infected = 0;
             NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
             NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
             for (int i=0; i<[vir_arrays count]; i++) {
                 NSArray *temp = vir_arrays[i];
-                if ([temp count]>0) [vir_acc addObjectsFromArray:vir_arrays[i]];
+                if ([temp count]>0) {
+                    [vir_acc addObjectsFromArray:vir_arrays[i]];
+                    nem_infected++;
+                }
             }
             
-            report_dict[@"Virus Load"] = @([vir_acc count]/(float)[nematodes count]);
+            report_dict[@"Virus Load"] = @([vir_acc count]/(float)nem_infected);
+            report_dict[@"Fraction Infected"] = @(nem_infected/(float)[nematodes count]);
+            
             
             NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
             report_dict[@"Transmissibility mean"] = trans_stats[0];
@@ -208,6 +214,10 @@
             NSArray *burst_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"BurstSize"]];
             report_dict[@"BurstSize mean"] = burst_stats[0];
             report_dict[@"BurstSize stdev"] = burst_stats[1];
+            
+            NSArray *dur_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Durability"]];
+            report_dict[@"Durability mean"] = dur_stats[0];
+            report_dict[@"Durability stdev"] = dur_stats[1];
             
             if (![vir_acc count] && breakIfNoViruses) {
                 NSLog(@"All viruses dead");

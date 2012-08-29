@@ -319,7 +319,9 @@ static int nematode_state_table[14][2]  =
         [fem addViruses:transmitted]; // this is an array..
         [fem setState: MATING];
         [[Sim potentialMates] removeObject:fem];
-        if (![[Sim nematodes] containsObject:fem]) {NSLog(@"Not in nematodes\n");}
+        if (![[Sim nematodes] containsObject:fem]) {
+            NSLog(@"Not in nematodes\n");
+        }
     }
 }
 
@@ -435,6 +437,9 @@ static int nematode_state_table[14][2]  =
         if (Health <= 0) {
             State = DEAD;
             [[Sim deadNematodes] addObject: self];
+            if ([[Sim potentialMates] containsObject:self]) {
+                [[Sim potentialMates] removeObject:self];
+            }
             if (inContainer != nil) {
                 [inContainer setNumContained:[inContainer numContained]-1];
             }
