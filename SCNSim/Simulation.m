@@ -93,7 +93,7 @@
         for (int i=0; i<[nematodes count]; i++) {
             if (coin_toss(infectionRate) && [nematodes[i] State] == UNHATCHEDJ2) {
                 NSMutableArray *viruslist = [[NSMutableArray alloc] init];
-                for (int j=0; j<BurstSize; j++) {
+                for (int j=0; j<viralLoads; j++) {
                     @autoreleasepool {
                         Virus *virus = [[Virus alloc] initWithVirulence:Virulence
                                                        Transmissibility:Transmissibility
