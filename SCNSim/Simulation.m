@@ -144,20 +144,22 @@
 -(int) run {
     while (simTicks < maxTicks && !Done) {
         @autoreleasepool {
+            // run every day
+            
             for (int i=0; i<[nematodes count]; i++) {
                 @autoreleasepool {
                     [nematodes[i] reproduceViruses];
                 }
             }
+            [environment increment_age:1];
+            [self removeDeadNematodes];
+            [soybean growIncrement:1 temp:[environment Temperature]];
+            for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
+            [self convertEggSacsToCysts];
+            
+            
             @autoreleasepool {
                 if (simTicks % reportInterval==0) [self report];
-            }
-            if (simTicks % 24==0) {
-                [environment increment_age:24];
-                [self removeDeadNematodes];
-                [soybean growIncrement:1 temp:[environment Temperature]];
-                for (int i=0; i<[nematodes count]; i++) [nematodes[i] growBy: 1];
-                [self convertEggSacsToCysts];
             }
         }
         simTicks ++;

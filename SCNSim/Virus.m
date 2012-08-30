@@ -40,10 +40,10 @@
     // since these numbers are used as a probability
     
     if(coin_toss(probability)) {
-        Transmissibility += random_gauss(0, 0.15);
-        Virulence += random_gauss(0, 0.15);
-        BurstSize += random_integer(-10, 10);
-        Durability += random_gauss(0, 0.15);
+        Transmissibility += random_gauss(0, 0.1*Transmissibility);
+        Virulence += random_gauss(0, 0.1*Virulence);
+        BurstSize += (int)random_gauss(0, 0.1*BurstSize);
+        Durability += random_gauss(0, 0.1*Durability);
     }
     if (Transmissibility > 1) Transmissibility = 1;
     if (Durability > 1) Durability = 1;

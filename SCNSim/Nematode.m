@@ -97,13 +97,35 @@ static int nematode_state_table[14][2]  =
     [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
 
 }
+
+
+-(void) setNematodeToDead {
+    State = DEAD;
+    [[Sim deadNematodes] addObject:self];
+    if ([[Sim potentialMates] containsObject:self]) {
+        [[Sim potentialMates] removeObject:self];
+    }
+    if (inContainer != nil) {
+        [inContainer setNumContained:[inContainer numContained]-1];
+    }
+    if ((State == CYST || State == EGGSAC) && numContained >0) {
+        // i am a cyst or eggsac with some unhatchlings
+        @autoreleasepool {
+            NSArray *dead_babies = [[Sim nematodes] filteredArrayUsingPredicate:
+                                    [NSPredicate predicateWithFormat:@"inContainer ==%@", self]];
+            for (Nematode *baby in dead_babies) {
+                [baby setNematodeToDead];
+            }
+        }
+    }
+}
 -(void) reproduceViruses {
     
     @autoreleasepool {
         float burden=0;
         // first get rid of dead viruses
         
-        if ([Viruses count] > 0 && [Viruses count] <= 100 && State != UNHATCHEDJ2 &&
+        if ([Viruses count] > 0 && State != UNHATCHEDJ2 &&
             State != EGGSAC && State != DEAD && State != CYST) {
             // only run if there aren't enough viruses already
             [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
@@ -124,7 +146,8 @@ static int nematode_state_table[14][2]  =
                             }
                             
                             if ([vir Alive]) {
-                                for (int j=0; j<vir.BurstSize; j++) {
+                                int new_virs = (int)random_gauss(vir.BurstSize, 1);
+                                for (int j=0; j<new_virs; j++) {
                                     @autoreleasepool {
                                         Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize Durability:vir.Durability];
                                         [newvir mutate:0.4];
@@ -144,16 +167,11 @@ static int nematode_state_table[14][2]  =
             
             for (int i=0; i<[Viruses count]; i++) {
                 burden += [Viruses[i] Virulence];
-                burden = burden / 24.0; // account for burden per hour
             }
         }
         
         if (burden > Health) {
-            State = DEAD;
-            [[Sim deadNematodes] addObject: self];
-            if (inContainer != nil) {
-                [inContainer setNumContained:[inContainer numContained]-1];
-            }
+            [self setNematodeToDead];
         }
         else Health = MAX(Health-burden, 0);
     }
@@ -216,15 +234,7 @@ static int nematode_state_table[14][2]  =
                 [inContainer setNumContained:([inContainer numContained]-1)];
 
                 if ([inContainer numContained] <=0 ) {
-                    [inContainer setState:DEAD];
-                    [[Sim deadNematodes] addObject: inContainer];
-                    [inContainer setNumContained:0];
-                    for (Nematode *nem in [Sim nematodes]) {
-                        if ([nem inContainer] == self) {
-                            [nem setState:DEAD];
-                            [[Sim deadNematodes] addObject:nem];
-                        }
-                    }
+                    [inContainer setNematodeToDead];
                 }
                 
                 inContainer = nil;
@@ -232,11 +242,7 @@ static int nematode_state_table[14][2]  =
             }
         }
         else {
-            State = DEAD;
-            [[Sim deadNematodes] addObject: self];
-            if (inContainer != nil) {
-                [inContainer setNumContained:[inContainer numContained]-1];
-            }
+            [self setNematodeToDead];
         }
     //}
 }
@@ -318,11 +324,11 @@ static int nematode_state_table[14][2]  =
             }
         }
         [fem addViruses:transmitted]; // this is an array..
-        [fem setState: MATING];
-        [[Sim potentialMates] removeObject:fem];
         if (![[Sim nematodes] containsObject:fem]) {
             NSLog(@"Not in nematodes\n");
         }
+        [fem setState: MATING];
+        [[Sim potentialMates] removeObject:fem];
     }
 }
 
@@ -436,21 +442,12 @@ static int nematode_state_table[14][2]  =
             Health = MAX(Health - health_per_day, 0);
         }
         if (Health <= 0) {
-            State = DEAD;
-            [[Sim deadNematodes] addObject: self];
-            if ([[Sim potentialMates] containsObject:self]) {
-                [[Sim potentialMates] removeObject:self];
-            }
-            if (inContainer != nil) {
-                [inContainer setNumContained:[inContainer numContained]-1];
-            }
+            [self setNematodeToDead];
         }
         if (inContainer != nil) {
             if ([inContainer State] == DEAD) {
-                State = DEAD;
+                [self setNematodeToDead];
                 // I die if my container dies.
-                [[Sim deadNematodes] addObject: self];
-                [inContainer setNumContained:[inContainer numContained]-1];
             }
         }
     }
@@ -473,8 +470,7 @@ static int nematode_state_table[14][2]  =
                     Nematode *mate = [Sim potentialMates][random_integer(0, (int)[[Sim potentialMates] count]-1)];
                     [self impregnateFemale:mate];
                     if (!coin_toss(Health)) {
-                        State = DEAD;
-                        [[Sim deadNematodes] addObject:self];
+                        [self setNematodeToDead];
                     }
                     
                 }

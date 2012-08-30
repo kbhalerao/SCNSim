@@ -30,10 +30,8 @@
 -(void) increment_age:(int)increment {
     // Increase age by given increment
     Age += increment;
-        
-    int days = Age / 24;
     
-    int month = ((days % 365) / 30.4);
+    int month = ((Age % 365) / 30.4);
     // Avg days in a month = 365/12 = 30.4
     
     // temperature ranges for Champaign county, IL
