@@ -7,7 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "Virus.h"
 #import "Simulation.h"
 #import "Soybean.h"
 
@@ -44,18 +43,26 @@
 @interface Nematode : NSObject 
 
 @property int State; // one of the integer defines above
-@property NSMutableArray* Viruses; // array containing viruses
 @property int Age;
 @property float Health; // max of 100
 @property int NumZygotes;
 @property (weak) Simulation* Sim;
 @property (weak) Nematode * inContainer; // container =0 for eggsac, 1 for cyst.
 @property int numContained;
+@property (readonly) NSMutableDictionary *Infection;
+@property int generation;
+
+// Infection is a dictionary that contains four viral parameters
+// Burden  - Range 0-Health - corresponding to viral burden
+// Virulence -  a multiplier to the burden
+// Transmissibility - a probability for transmitting burden
+// Durability - a probability that allows the viral burden to be reduced.
+
 
 -(Nematode *) initWithSim: (Simulation *) sim;
 -(void) incrementAge: (int) increment;
 -(void) reproduceViruses;
 -(void) growBy: (int) increment;
--(void) addViruses: (NSArray*) viruses;
+-(void) addInfection:(NSDictionary *) newInfection;
 -(void) dealloc;
 @end

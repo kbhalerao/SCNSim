@@ -48,13 +48,14 @@ static int nematode_state_table[14][2]  =
 @implementation Nematode
 
 @synthesize State;
-@synthesize Viruses;
 @synthesize Age;
 @synthesize Health;
 @synthesize NumZygotes;
 @synthesize Sim;
 @synthesize inContainer;
 @synthesize numContained;
+@synthesize Infection;
+@synthesize generation;
 
 
 -(Nematode *) initWithSim: (Simulation *) sim {
@@ -62,12 +63,20 @@ static int nematode_state_table[14][2]  =
         if (self = [super init]) {
             Age = 0;
             State = CYST;
-            Viruses = [[NSMutableArray alloc] init];
             Health = 100;
             NumZygotes = 0;
             Sim = sim;
             inContainer = nil; // not in any container
             numContained = 0;
+            
+            Infection = [[NSMutableDictionary alloc] initWithCapacity:4];
+            Infection[@"Burden"] = @(0);
+            Infection[@"Virulence"] = @(0);
+            Infection[@"Transmissibility"] = @(0);
+            Infection[@"Durability"] = @(0);
+            
+            generation = 0;
+            
         }
         return self;
     }
@@ -84,7 +93,7 @@ static int nematode_state_table[14][2]  =
 
 -(void) dealloc {
     //free(nematode_state_table);
-    Viruses = nil;
+    Infection = nil;
     Sim = nil;
     inContainer = nil;
 }
@@ -93,87 +102,78 @@ static int nematode_state_table[14][2]  =
     Age += increment;
 }
 -(void) cure_viruses { // private method
-    
-    [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
-
+    // Multiply the burden by the complement of durability
+    Infection[@"Burden"] = @([Infection[@"Burden"] floatValue] * [Infection[@"Durability"] floatValue]);
 }
 
 
 -(void) setNematodeToDead {
-    State = DEAD;
-    [[Sim deadNematodes] addObject:self];
-    if ([[Sim potentialMates] containsObject:self]) {
-        [[Sim potentialMates] removeObject:self];
-    }
+    
     if (inContainer != nil) {
         [inContainer setNumContained:[inContainer numContained]-1];
     }
-    if ((State == CYST || State == EGGSAC) && numContained >0) {
-        // i am a cyst or eggsac with some unhatchlings
-        @autoreleasepool {
-            NSArray *dead_babies = [[Sim nematodes] filteredArrayUsingPredicate:
-                                    [NSPredicate predicateWithFormat:@"inContainer ==%@", self]];
-            for (Nematode *baby in dead_babies) {
-                [baby setNematodeToDead];
+    
+    else {
+        // not in container
+        if ([[Sim potentialMates] containsObject:self]) {
+            [[Sim potentialMates] removeObject:self];
+        }
+        
+        if (numContained > 0) {
+            numContained = 0;
+
+            @autoreleasepool {
+                for (Nematode *baby in [Sim nematodes]) {
+                    if ([baby inContainer] == self) {
+                        [baby setState:DEAD];
+                        [[Sim deadNematodes] addObject:baby];
+                    }
+                }
             }
         }
     }
+
+    State = DEAD;
+    [[Sim deadNematodes] addObject:self];
+}
+
+-(NSNumber *) mutateParameter:(NSString *) key {
+    float param = [Infection[key] floatValue];
+    param += random_gauss(0, param*0.15); // vary within 15%
+    param = MAX(param, 0);
+    if (key == @"Transmissibility" || key == @"Durability") {
+        param = MIN(1, param);
+    }
+    return (@(param));
 }
 -(void) reproduceViruses {
     
     @autoreleasepool {
-        float burden=0;
-        // first get rid of dead viruses
         
-        if ([Viruses count] > 0 && State != UNHATCHEDJ2 &&
+        if ([Infection[@"Burden"] floatValue] > 0 && State != UNHATCHEDJ2 &&
             State != EGGSAC && State != DEAD && State != CYST) {
+            [self cure_viruses];
             // only run if there aren't enough viruses already
-            [Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
+            // first we mutate the virus burden
             
-            if ([Viruses count]) {
-                
-                NSMutableArray *new_viruses = [[NSMutableArray alloc] init];
-                for (int i=0; i<[Viruses count]; i++) {
-                    @autoreleasepool {
-                        
-                        if (coin_toss(Health / 100)) {
-                            // reproduce only if healthy enough
-
-                            Virus *vir = Viruses[i];
-                            
-                            if (coin_toss(1-vir.Durability)) {
-                                [vir setAlive:FALSE];
-                            }
-                            
-                            if ([vir Alive]) {
-                                int new_virs = (int)random_gauss(vir.BurstSize, 1);
-                                for (int j=0; j<new_virs; j++) {
-                                    @autoreleasepool {
-                                        Virus *newvir = [[Virus alloc] initWithVirulence:vir.Virulence Transmissibility:vir.Transmissibility BurstSize:vir.BurstSize Durability:vir.Durability];
-                                        [newvir mutate:0.4];
-                                        [new_viruses addObject: newvir];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                [Viruses addObjectsFromArray:new_viruses];
+            Infection[@"Virulence"] = [self mutateParameter:@"Virulence"];
+            Infection[@"Transmissibility"] = [self mutateParameter:@"Transmissibility"];
+            Infection[@"Durability"] = [self mutateParameter:@"Durability"];
+            
+            if ([Infection[@"Virulence"] floatValue] == 0 ||
+                [Infection[@"Durability"] floatValue] == 0 ||
+                [Infection[@"Transmissibility"] floatValue] == 0) {
+                Infection[@"Burden"] = 0;
             }
             
-            //[Viruses filterUsingPredicate:[NSPredicate predicateWithFormat:@"Alive == %d", TRUE]];
+            Infection[@"Burden"] = @([Infection[@"Burden"] floatValue] * [Infection[@"Virulence"] floatValue]);
+            Health = Health-[Infection[@"Burden"] floatValue];
             
-            
-            for (int i=0; i<[Viruses count]; i++) {
-                burden += [Viruses[i] Virulence];
+            if (Health <= 0) {
+                [Sim setDeathByVirus:[Sim deathByVirus]+1];
+                [self setNematodeToDead];
             }
         }
-        
-        if (burden > Health) {
-            [self setNematodeToDead];
-        }
-        else Health = MAX(Health-burden, 0);
     }
 }
 
@@ -221,7 +221,7 @@ static int nematode_state_table[14][2]  =
                     if ([inContainer State]==EGGSAC) prob_hatch *=0.2;
                     else if ([inContainer State]==CYST) prob_hatch *= 0.002; // must be in a cyst.
                     else {
-                        NSLog(@"Unhatched J2 not in any container\n");
+                        NSLog(@"Gen %d Unhatched J2 not in any container\n", generation);
                     }
                 }
                 else {
@@ -313,17 +313,16 @@ static int nematode_state_table[14][2]  =
         [fem setNumZygotes:fnumzygotes];
     }
     @autoreleasepool {
-        NSMutableArray *transmitted = [[NSMutableArray alloc] init];
-        for (int i=0; i<[Viruses count]; i++) {
-            @autoreleasepool {
-                Virus *vir = Viruses[i];
-                if (coin_toss(vir.Transmissibility)) {
-                    [transmitted addObject:vir];
-                    [Viruses removeObject:vir];
-                }
-            }
-        }
-        [fem addViruses:transmitted]; // this is an array..
+        
+        float burdenTransmitted = [Infection[@"Burden"] floatValue] * [Infection[@"Transmissibility"] floatValue];
+        
+        Infection[@"Burden"] = @([Infection[@"Burden"] floatValue] - burdenTransmitted);
+        
+        NSMutableDictionary *TransmittedViruses = [NSMutableDictionary dictionaryWithDictionary:Infection];
+        TransmittedViruses[@"Burden"] = @(burdenTransmitted);
+        
+        [fem addInfection:TransmittedViruses];
+        
         if (![[Sim nematodes] containsObject:fem]) {
             NSLog(@"Not in nematodes\n");
         }
@@ -332,16 +331,6 @@ static int nematode_state_table[14][2]  =
     }
 }
 
-
--(void) moveSingleVirusToHost: (Nematode*) nem {
-    @autoreleasepool {
-        Virus *random_virus = Viruses[random_integer(0,(int)([Viruses count]-1))];
-        if (coin_toss(random_virus.Transmissibility)) {
-            [[nem Viruses] addObject:random_virus];
-            [Viruses removeObject:random_virus];
-        }
-    }
-}
 
 -(void) produceEggSac {
     // F_prime goes to eggsac - produces embryos.
@@ -357,25 +346,17 @@ static int nematode_state_table[14][2]  =
             // init them in embryo state,
             // transfer viruses from EGGSAC to EMBRYOs
             NSMutableArray *new_nematodes = [[NSMutableArray alloc] initWithCapacity:NumZygotes];
+            float BurdenPerBaby = [Infection[@"Burden"] floatValue] / NumZygotes;
             while (NumZygotes) {
                 @autoreleasepool {
                     
                     Nematode *baby = [[Nematode alloc] initAsEmbryoInSim:Sim];
                     [baby setInContainer:self];
+                    [baby setGeneration:([self generation]+1)];
+                    NSMutableDictionary *TransmittedInfection = [NSMutableDictionary dictionaryWithDictionary:Infection];
+                    TransmittedInfection[@"Burden"] = @(BurdenPerBaby);
                     
-                    if ([Viruses count] > 0) {
-                        float vir_per_egg = [Viruses count]/(float)(NumZygotes);
-                        
-                        while (vir_per_egg >1) {
-                            [self moveSingleVirusToHost:baby];
-                            vir_per_egg -= 1;
-                        }
-                        float vir_xmit_prob = MIN(1,vir_per_egg);
-                        
-                        if (coin_toss(vir_xmit_prob)) {
-                            [self moveSingleVirusToHost:baby];
-                        }
-                    }
+                    [baby addInfection:TransmittedInfection];
                     // we get a probability of
                     [new_nematodes addObject:baby];
                     NumZygotes--;
@@ -444,18 +425,31 @@ static int nematode_state_table[14][2]  =
         if (Health <= 0) {
             [self setNematodeToDead];
         }
-        if (inContainer != nil) {
-            if ([inContainer State] == DEAD) {
-                [self setNematodeToDead];
-                // I die if my container dies.
-            }
-        }
     }
 }
 
--(void) addViruses: (NSArray*) viruses {
+-(void) addInfection:(NSDictionary *) newInfection {
     @autoreleasepool {
-        [Viruses addObjectsFromArray:viruses];
+        float burden = [Infection[@"Burden"] floatValue];
+        float transmittedburden = [newInfection[@"Burden"] floatValue];
+        
+        if (burden + transmittedburden > 0) {
+
+            float newburden = burden + transmittedburden;
+            float newvirulence = (burden * [Infection[@"Virulence"] floatValue] +
+                                  transmittedburden * [newInfection[@"Virulence"] floatValue])/(burden + transmittedburden);
+            
+            float newtransmissibility = (burden * [Infection[@"Transmissibility"] floatValue] +
+                                  transmittedburden * [newInfection[@"Transmissibility"] floatValue])/(burden + transmittedburden);
+            
+            float newdurability = (burden * [Infection[@"Durability"] floatValue] +
+                                  transmittedburden * [newInfection[@"Durability"] floatValue])/(burden + transmittedburden);
+            
+            Infection[@"Burden"] = @(newburden);
+            Infection[@"Virulence"] = @(newvirulence);
+            Infection[@"Transmissibility"] = @(newtransmissibility);
+            Infection[@"Durability"] = @(newdurability);
+        }
     }
 }
 

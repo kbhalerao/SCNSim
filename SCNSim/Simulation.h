@@ -27,15 +27,15 @@
 @property int numMales;
 @property NSMutableArray *potentialMates;
 @property NSMutableArray *deadNematodes;
+@property int deathByVirus;
 
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
 -(void) installNewNematodes: (NSMutableArray*) new_nematodes;
 -(void) setLogFile: (NSString*) logfilename;
 -(void) infectCystsAtRate: (float) infectionRate
-                  atLoads: (int) viralLoads
+                 atBurden: (float) burden
             withVirluence: (float) Virulence
      withTransmissibility: (float) Transmissibility
-            withBurstSize: (int) BurstSize
            withDurability: (float) Durability;
 -(int) run;
 -(void) convertEggSacsToCysts;

@@ -30,6 +30,7 @@
             numMales = 0;
             potentialMates = [[NSMutableArray alloc] init];
             deadNematodes = [[NSMutableArray alloc] init];
+            deathByVirus = 0;
         }
         return self;
     }
@@ -44,6 +45,7 @@
 @synthesize numMales;
 @synthesize potentialMates;
 @synthesize deadNematodes;
+@synthesize deathByVirus;
 
 -(void) dealloc {
     environment = nil;
@@ -86,24 +88,19 @@
     }
 }
 
--(void) infectCystsAtRate: (float) infectionRate          atLoads: (int) viralLoads
-            withVirluence: (float) Virulence withTransmissibility: (float) Transmissibility
-            withBurstSize: (int) BurstSize         withDurability:(float) Durability {
+-(void) infectCystsAtRate:(float)infectionRate          atBurden:(float)burden
+            withVirluence:(float)Virulence  withTransmissibility:(float)Transmissibility
+           withDurability:(float)Durability {
     @autoreleasepool {
         for (int i=0; i<[nematodes count]; i++) {
             if (coin_toss(infectionRate) && [nematodes[i] State] == UNHATCHEDJ2) {
-                NSMutableArray *viruslist = [[NSMutableArray alloc] init];
-                for (int j=0; j<viralLoads; j++) {
-                    @autoreleasepool {
-                        Virus *virus = [[Virus alloc] initWithVirulence:Virulence
-                                                       Transmissibility:Transmissibility
-                                                              BurstSize:BurstSize
-                                                             Durability:Durability];
-                        [virus mutate:1];
-                        [viruslist addObject:virus];
-                    }
-                }
-                [nematodes[i] setViruses:viruslist];
+                NSMutableDictionary *viruses = [[NSMutableDictionary alloc] initWithCapacity:4];
+                viruses[@"Burden"] = @(burden);
+                viruses[@"Transmissibility"] = @(Transmissibility);
+                viruses[@"Durability"] = @(Durability);
+                viruses[@"Virulence"] = @(Virulence);
+                
+                [nematodes[i] addInfection:viruses];
             }
         }
         NSLog(@"Infected eggs with viruses\n");
@@ -121,14 +118,10 @@
     
     if([environment Temperature] < 68) {
         @autoreleasepool {
-            NSArray *eggsacs = [nematodes filteredArrayUsingPredicate:
-                                [NSPredicate predicateWithFormat:@"State == %i", EGGSAC]];
-            if ([eggsacs count]>0) {
-                // convert all eggsacs to cysts and change
-                // nematode memberships to incontainer cysts.
-
-                for (Nematode *sac in eggsacs) {
-                    [sac setState:CYST];
+            
+            for (Nematode *nem in nematodes) {
+                if ([nem State] == EGGSAC) {
+                    [nem setState:CYST];
                 }
             }
         }
@@ -165,13 +158,8 @@
         simTicks ++;
         //NSLog(@"%d", simTicks);
     }
-    [self cleanup];
-    return simTicks;
-}
-
--(void) cleanup {
     [logfile closeFile];
-    Done = TRUE;
+    return simTicks;
 }
 
 -(void) report {
@@ -181,6 +169,7 @@
         report_dict[@"Temperature"] = @([environment Temperature]);
         report_dict[@"Soybean"] = @([soybean PlantSize]);
         report_dict[@"Nematodes"] = @([nematodes count]);
+        report_dict[@"Death by virus"] = @(deathByVirus);
         
         @autoreleasepool {
             NSArray *stats_health = [self meanAndStandardDeviationOf:[nematodes valueForKey:@"Health"]];
@@ -191,39 +180,46 @@
         
         @autoreleasepool {
             int nem_infected = 0;
-            NSMutableArray *vir_acc = [[NSMutableArray alloc] init];
-            NSArray *vir_arrays = [nematodes valueForKey:@"Viruses"];
-            for (int i=0; i<[vir_arrays count]; i++) {
-                NSArray *temp = vir_arrays[i];
-                if ([temp count]>0) {
-                    [vir_acc addObjectsFromArray:vir_arrays[i]];
+
+            NSArray *infection_array = [nematodes valueForKey:@"Infection"];
+
+            NSMutableArray *burden = [[NSMutableArray alloc] init];
+            NSMutableArray *wt_trans = [[NSMutableArray alloc] init];
+            NSMutableArray *wt_vir = [[NSMutableArray alloc] init];
+            NSMutableArray *wt_dur = [[NSMutableArray alloc] init];
+            
+            float sum_burden = 0;
+            for (int i=0; i<[infection_array count]; i++) {
+                NSDictionary *inf = infection_array[i];
+                burden[i] = inf[@"Burden"];
+                sum_burden += [burden[i] floatValue];
+                if ([burden[i] floatValue] > 0) {
                     nem_infected++;
-                }
+                    [wt_trans addObject:@([burden[i] floatValue]*[inf[@"Transmissibility"] floatValue])];
+                    [wt_dur addObject:@([burden[i] floatValue]*[inf[@"Transmissibility"] floatValue])];
+                    [wt_vir addObject:@([burden[i] floatValue]*[inf[@"Virulence"] floatValue])];
+                }                
             }
             
-            report_dict[@"Virus Load"] = @([vir_acc count]/(float)nem_infected);
-            report_dict[@"Fraction Infected"] = @(nem_infected/(float)[nematodes count]);
+            report_dict[@"Virus Load"] = @(sum_burden/nem_infected);
+            report_dict[@"Fraction Infected"] = @((float)nem_infected/[nematodes count]);
             
             
-            NSArray *trans_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Transmissibility"]];
+            NSArray *trans_stats = [self meanAndStandardDeviationOf:wt_trans];
             report_dict[@"Transmissibility mean"] = trans_stats[0];
             report_dict[@"Transmissibility stdev"] = trans_stats[1];
             
-            NSArray *vir_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Virulence"]];
+            NSArray *vir_stats = [self meanAndStandardDeviationOf:wt_vir];
             report_dict[@"Virulence mean"] = vir_stats[0];
             report_dict[@"Virulence stdev"] = vir_stats[1];
             
-            NSArray *burst_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"BurstSize"]];
-            report_dict[@"BurstSize mean"] = burst_stats[0];
-            report_dict[@"BurstSize stdev"] = burst_stats[1];
-            
-            NSArray *dur_stats = [self meanAndStandardDeviationOf:[vir_acc valueForKey:@"Durability"]];
+            NSArray *dur_stats = [self meanAndStandardDeviationOf:wt_dur];
             report_dict[@"Durability mean"] = dur_stats[0];
             report_dict[@"Durability stdev"] = dur_stats[1];
             
-            if (![vir_acc count] && breakIfNoViruses) {
+            if (!nem_infected && breakIfNoViruses) {
                 NSLog(@"All viruses dead");
-                [self cleanup];
+                Done = TRUE;
             }
 
         }
@@ -251,33 +247,12 @@
         // here's an update of the potential males 
         numMales = [stateCounts[M] intValue]; // for use in hatching function
         
-        
-        
-        NSArray *eggsacs = [nematodes filteredArrayUsingPredicate:
-                         [NSPredicate predicateWithFormat:@"State == %i", EGGSAC]];
-        NSArray *cysts = [nematodes filteredArrayUsingPredicate:
-                          [NSPredicate predicateWithFormat:@"State == %i", CYST]];
+        int numEggSacs = [stateCounts[EGGSAC] intValue];
+        int numCysts = [stateCounts[CYST] intValue];
         
         int unhatcheds = [stateCounts[EMBRYO] intValue] + [stateCounts[J1] intValue] + [stateCounts[UNHATCHEDJ2] intValue];
-        report_dict[@"Eggs per container mean"] = @(unhatcheds/((float)[eggsacs count] + (float)[cysts count]));
+        report_dict[@"Eggs per container mean"] = @(unhatcheds/((float) (numEggSacs + numCysts)));
         
-        
-        int numEggsInCysts = 0;
-        if ([cysts count]) {
-            for (Nematode *nem in cysts) {
-                numEggsInCysts += [nem numContained];
-            }
-        }
-        report_dict[@"Eggs per cyst"] = @(numEggsInCysts / (float)[cysts count]);
-        
-        
-        int numEggsInSacs = 0;
-        if ([eggsacs count]) {
-            for (Nematode *nem in eggsacs) {
-                numEggsInSacs += [nem numContained];
-            }
-        }
-        report_dict[@"Eggs per sac"] = @(numEggsInSacs / (float)[eggsacs count]);
         
         
         if (simTicks==0) {
@@ -291,14 +266,14 @@
         NSArray *report_values = [report_dict objectsForKeys:columns notFoundMarker:@"None"];
         
         NSString *report_line = [NSString stringWithFormat:@"%@\n", [report_values componentsJoinedByString:@","]];
-        NSLog(@"%@",report_line);
+        //NSLog(@"%@",report_line);
         [logfile writeData:[report_line dataUsingEncoding:NSUTF8StringEncoding]];
         
 
         
         if (![nematodes count]) {
             NSLog(@"All nematodes dead");
-            [self cleanup];
+            Done = TRUE;
         }
     }
 }
