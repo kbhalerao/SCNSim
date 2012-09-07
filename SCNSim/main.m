@@ -141,10 +141,10 @@ int main(int argc, const char * argv[])
                                                     int runs = [mysim run];
                                                     //@"Cysts, InfectionRate, ViralLoad, Virulence, Transmisibility, BurstSize, MaxTicks, Filename\n"
                                                     if (runs) {
-                                                        NSString *iteration = [NSString stringWithFormat:@"%d,%.2f,%d,%.2f,%.2f,%f,%d,%@\n",
+                                                        NSString *iteration = [NSString stringWithFormat:@"%d,%f,%f,%f,%f,%f,%d,%@\n",
                                                                                [dict[@"cysts"] intValue],
                                                                                [dict[@"infrate"] floatValue],
-                                                                               [dict[@"burden"] intValue],
+                                                                               [dict[@"burden"] floatValue],
                                                                                [dict[@"virulence"] floatValue],
                                                                                [dict[@"transmissibility"] floatValue],
                                                                                [dict[@"durability"] floatValue],
