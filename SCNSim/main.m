@@ -122,6 +122,8 @@ int main(int argc, const char * argv[])
                                                     [[mysim environment] setLocalEnvironment:localEnvironment];
                                                     [[mysim soybean] setAlternateYears:[(simDict[@"Soybean settings"])[@"Alternate year crop"] boolValue]];
                                                     [mysim setBreakIfNoViruses:[simDict[@"Simulation settings"][@"Break if no viruses"] boolValue]];
+                                                    [mysim setMutationRate:[simDict[@"Virus settings"][@"Mutation rate"]
+                                                                floatValue]];
                                                     
                                                     [mysim infectCystsAtRate:[dict[@"infrate"] floatValue]
                                                                      atBurden:[dict[@"burden"] floatValue]

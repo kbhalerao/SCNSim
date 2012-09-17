@@ -31,6 +31,7 @@
             potentialMates = [[NSMutableArray alloc] init];
             deadNematodes = [[NSMutableArray alloc] init];
             deathByVirus = 0;
+            mutationRate = 0;
         }
         return self;
     }
@@ -46,6 +47,7 @@
 @synthesize potentialMates;
 @synthesize deadNematodes;
 @synthesize deathByVirus;
+@synthesize mutationRate;
 
 -(void) dealloc {
     environment = nil;

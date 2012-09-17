@@ -28,6 +28,7 @@
 @property NSMutableArray *potentialMates;
 @property NSMutableArray *deadNematodes;
 @property int deathByVirus;
+@property float mutationRate;
 
 -(Simulation*) initForMaxTicks: (int) ticks withCysts: (int) cysts;
 -(void) installNewNematodes: (NSMutableArray*) new_nematodes;

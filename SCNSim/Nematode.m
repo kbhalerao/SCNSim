@@ -156,14 +156,16 @@ static int nematode_state_table[14][2]  =
             // only run if there aren't enough viruses already
             // first we mutate the virus burden
             
-            Infection[@"Virulence"] = [self mutateParameter:@"Virulence"];
-            Infection[@"Transmissibility"] = [self mutateParameter:@"Transmissibility"];
-            Infection[@"Durability"] = [self mutateParameter:@"Durability"];
-            
-            if ([Infection[@"Virulence"] floatValue] == 0 ||
-                [Infection[@"Durability"] floatValue] == 0 ||
-                [Infection[@"Transmissibility"] floatValue] == 0) {
-                Infection[@"Burden"] = 0;
+            if (coin_toss([Sim mutationRate])) {
+                Infection[@"Virulence"] = [self mutateParameter:@"Virulence"];
+                Infection[@"Transmissibility"] = [self mutateParameter:@"Transmissibility"];
+                Infection[@"Durability"] = [self mutateParameter:@"Durability"];
+                
+                if ([Infection[@"Virulence"] floatValue] == 0 ||
+                    [Infection[@"Durability"] floatValue] == 0 ||
+                    [Infection[@"Transmissibility"] floatValue] == 0) {
+                    Infection[@"Burden"] = 0;
+                }
             }
             
             Infection[@"Burden"] = @([Infection[@"Burden"] floatValue] * [Infection[@"Virulence"] floatValue]);
