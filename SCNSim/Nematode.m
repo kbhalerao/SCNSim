@@ -141,7 +141,7 @@ static int nematode_state_table[14][2]  =
     float param = [Infection[key] floatValue];
     param += random_gauss(0, param*0.15); // vary within 15%
     param = MAX(param, 0);
-    if (key == @"Transmissibility" || key == @"Durability") {
+    if ([key isEqual: @"Transmissibility"] || [key isEqual: @"Durability"]) {
         param = MIN(1, param);
     }
     return (@(param));
