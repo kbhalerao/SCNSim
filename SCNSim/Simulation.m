@@ -198,7 +198,7 @@
                 if ([burden[i] floatValue] > 0) {
                     nem_infected++;
                     [wt_trans addObject:@([burden[i] floatValue]*[inf[@"Transmissibility"] floatValue])];
-                    [wt_dur addObject:@([burden[i] floatValue]*[inf[@"Transmissibility"] floatValue])];
+                    [wt_dur addObject:@([burden[i] floatValue]*[inf[@"Durability"] floatValue])];
                     [wt_vir addObject:@([burden[i] floatValue]*[inf[@"Virulence"] floatValue])];
                 }                
             }

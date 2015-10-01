@@ -150,8 +150,9 @@ static int nematode_state_table[14][2]  =
     
     @autoreleasepool {
         
-        if ([Infection[@"Burden"] floatValue] > 0 && State != UNHATCHEDJ2 &&
+        if ([Infection[@"Burden"] floatValue] > 0.0001 && State != UNHATCHEDJ2 &&
             State != EGGSAC && State != DEAD && State != CYST) {
+            // increased burden value to be very small... prevent rounding errors.
             [self cure_viruses];
             // only run if there aren't enough viruses already
             // first we mutate the virus burden
@@ -169,6 +170,9 @@ static int nematode_state_table[14][2]  =
             }
             
             Infection[@"Burden"] = @([Infection[@"Burden"] floatValue] * [Infection[@"Virulence"] floatValue]);
+            if([Infection[@"Burden"] floatValue] <= 0.0001) {
+                Infection[@"Burden"] = @(0);
+            }
             Health = Health-[Infection[@"Burden"] floatValue];
             
             if (Health <= 0) {

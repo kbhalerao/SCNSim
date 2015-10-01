@@ -17,13 +17,19 @@ int main(int argc, const char * argv[])
     
     @autoreleasepool {
         
+        if(argc == 1) {
+            NSLog(@"Missing plist for simulation parameters");
+            return(1);
+        }
+        
+        
         // read the plist 
         NSString *errorDesc = nil;
         NSPropertyListFormat format;
         NSString *plistPath;
         NSString *rootPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
                                                                   NSUserDomainMask, YES) objectAtIndex:0];
-        plistPath = [rootPath stringByAppendingPathComponent:@"SimulationProperties.plist"];
+        plistPath = [rootPath stringByAppendingPathComponent:[NSString stringWithUTF8String:argv[1]]];
         
         if (![[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
             plistPath = [[NSBundle mainBundle] pathForResource:@"SimulationProperties" ofType:@"plist"];

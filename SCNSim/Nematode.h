@@ -49,7 +49,7 @@
 @property (weak) Simulation* Sim;
 @property (weak) Nematode * inContainer; // container =0 for eggsac, 1 for cyst.
 @property int numContained;
-@property (readonly) NSMutableDictionary *Infection;
+@property NSMutableDictionary *Infection;
 @property int generation;
 
 // Infection is a dictionary that contains four viral parameters
